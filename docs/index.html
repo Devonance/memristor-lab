@@ -18,12 +18,16 @@
 <body>
 <canvas id="stage" aria-label="3D view of the lab bench. Drag to orbit."></canvas>
 <div id="labels"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<button class="dtab" id="tabL" title="Hide or show the text panel  [" aria-label="Hide the text panel" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span>Text</span></button>
+<button class="dtab" id="tabR" title="Hide or show the instruments  ]" aria-label="Hide the instruments" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg><span>Scope</span></button>
 <div class="tools" id="tools" aria-label="3D view controls">
   <button data-tool="reset" title="Reset view (double-tap the bench)" aria-label="Reset view"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
   <button data-tool="in" title="Zoom in (pinch or scroll)" aria-label="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6M20 20l-4-4"/></svg></button>
   <button data-tool="out" title="Zoom out" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg></button>
   <button data-tool="labels" class="on" title="Labels on/off" aria-label="Labels on or off"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></button>
+  <button data-tool="xray" class="only-bb" title="X-ray the breadboard" aria-label="X-ray the breadboard"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 6v12M12 6v12M17 6v12" opacity=".6"/></svg></button>
   <button data-tool="full" title="Focus on the 3D bench" aria-label="Focus on the 3D bench"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </div>
 
@@ -31,6 +35,7 @@
   <button class="menubtn" id="menuBtn" aria-label="Open the menu"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><b>Menu</b></button>
   <a class="brand" href="#0"><span class="brand-mark" aria-hidden="true"></span><span>Memristor&nbsp;Lab</span></a>
   <nav class="dots" id="dots" aria-label="Stations"></nav>
+  <button class="soundbtn" id="soundBtn" aria-label="Mute sound" aria-pressed="true"><span class="i-on"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></span><span class="i-off"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg></span><b>Sound on</b></button>
   <button class="gbtn" id="glossBtn" aria-label="Open the glossary"><span aria-hidden="true">Aa</span><b>Glossary</b></button>
   <div class="mode" id="mode" role="group" aria-label="Explanation level">
     <button data-m="simple" title="Plain English, no equations">Simple</button><button data-m="tech" title="Equations, models and references for engineers, physicists and mathematicians">Technical</button>
@@ -62,7 +67,7 @@
   <button class="btn primary" data-go="1">Start: wire one up <span aria-hidden="true">→</span></button>
   <div class="deeper"><p class="kicker sub">Go deeper</p>
     <details class="deep"><summary>What is a “circuit element”, anyway?</summary><p>The simplest building blocks of electronics, each defined by one rule linking two electrical quantities. A resistor links voltage and current, a capacitor links charge and voltage, and an inductor links flux and current. Chua asked whether a fourth rule, linking charge and flux, deserved its own part.</p><p class="pro dtech">A two-terminal element is defined by a constitutive relation between a pair of v, i, q, φ. R: f(v, i) = 0. C: f(q, v) = 0. L: f(φ, i) = 0. Memristor: f(q, φ) = 0.</p></details>
-    <details class="deep"><summary>Why would anyone want a resistor that remembers?</summary><p>Three reasons. Memory chips that keep data with the power off and switch in nanoseconds. Brain-like chips, where a memristor plays the part of a synapse whose strength changes as it learns. And computing inside memory, which saves the energy normally spent shuttling data around. See “Computing inside memory” in the menu.</p><p class="pro dtech">Non-volatile RRAM, analog in-memory matrix–vector multiplication in crossbars (Ohm + Kirchhoff), and neuromorphic synapses. Accuracy is limited by update nonlinearity, cycle-to-cycle noise, drift and endurance.</p></details>
+    <details class="deep"><summary>Why would anyone want a resistor that remembers?</summary><p>Three reasons. Memory chips that keep data with the power off and switch in nanoseconds. Brain-like chips, where a memristor plays the part of a synapse whose strength changes as it learns. And computing inside memory, which saves the energy normally spent shuttling data around. See “Computing inside memory” in the menu.</p><p><button class="btn ghost" data-art="realworld">Where memristors already ship →</button> <button class="btn ghost" data-art="electricity">Electricity in five minutes →</button></p><p class="pro dtech">Non-volatile RRAM, analog in-memory matrix–vector multiplication in crossbars (Ohm + Kirchhoff), and neuromorphic synapses. Accuracy is limited by update nonlinearity, cycle-to-cycle noise, drift and endurance.</p></details>
     <details class="deep"><summary>How to use this lab</summary><p>Drag the bench to rotate it, pinch or scroll to zoom, and tap any part to learn what it is. Dotted words have a plain-English definition. The ☰ menu lists every station, the parts guide, deep dives and settings. Switch to Technical mode at any time for the equations.</p></details>
   </div>
 </section>
@@ -94,7 +99,11 @@
     <button data-p="0" class="on">Black box “M?”</button><button data-p="1">Plain resistor</button><button data-p="2">Real RRAM cell</button>
   </div>
   <label class="sl"><span>Battery <output id="obv">3.0 V</output></span><input id="ibv" type="range" min="2" max="6" step="0.1" value="3"></label>
-  <div class="row"><button class="btn" id="bbParts">Parts guide: what is each piece?</button><button class="btn" id="bbXray">See inside the breadboard</button></div>
+  <div class="xcall" id="xcall">
+    <div class="xtxt"><b>New to breadboards?</b> Switch on <b>X-ray</b> to see the hidden metal strips that connect the holes, then tap any part to learn it.</div>
+    <label class="tog big"><input type="checkbox" id="bbXrayT"><span>X-ray</span></label>
+  </div>
+  <div class="row"><button class="btn" id="bbParts">Parts guide: what is each piece?</button></div>
   <p class="kicker sub">Try this</p>
   <ol class="quest" id="quest">
     <li data-q="hold">Hold the button for a few seconds. The green LED starts dim and gets <b>brighter</b>.</li>
@@ -106,7 +115,7 @@
   <p class="note pro">The difference in the last step matters. The ideal box changes whenever <em>any</em> current flows, so even reading it disturbs it. Real cells have a write threshold, which is what makes them usable memories. It is also one of the things that make them non-ideal.</p>
   <div class="deeper"><p class="kicker sub">Go deeper</p>
     <details class="deep"><summary>How a breadboard is wired inside</summary><p>Under the plastic are springy metal strips. In each numbered column, the five holes a–e share one strip and f–j share another. The long rows along the edges (the power rails) are each one strip running the whole length. The groove down the middle separates the two halves. Tap “See inside the breadboard” to watch the strips appear.</p></details>
-    <details class="deep"><summary>Why the LED needs a resistor</summary><p>An LED barely conducts until about 2 V, then suddenly conducts a lot. Connected straight to a battery it would draw far too much current and burn out. The 220 Ω resistor keeps the current to a few milliamps.</p><p class="pro dtech">With V_f ≈ 2 V and a 3 V supply, I ≈ (3 − 2)/(220 Ω + M). With the box fully ON (M = 100 Ω) that is about 3 mA.</p></details>
+    <details class="deep"><summary>Why the LED needs a resistor</summary><p>An LED barely conducts until about 2 V, then suddenly conducts a lot. Connected straight to a battery it would draw far too much current and burn out. The 220 Ω resistor keeps the current to a few milliamps.</p><p><button class="btn ghost" data-art="ledcalc">Try the LED resistor calculator →</button></p><p class="pro dtech">With V_f ≈ 2 V and a 3 V supply, I ≈ (3 − 2)/(220 Ω + M). With the box fully ON (M = 100 Ω) that is about 3 mA.</p></details>
     <details class="deep"><summary>Why the brightening speeds up</summary><p>It’s a feedback loop. Current lowers the box’s resistance, lower resistance lets more current through, and more current lowers the resistance faster still. That’s why the LED creeps up slowly at first and then rushes to full brightness.</p><p class="pro dtech">dq/dt = i = (V − V_f)/(R_s + M(q)) with dM/dq < 0, so the rate of change accelerates as q grows.</p></details>
     <details class="deep"><summary>How the direction switch reverses the current</summary><p>The slide switch has two sets of contacts that move together. With the two crossed wires (green and blue), sliding it swaps which end of the black box connects to + and which to −, so current flows through the box the other way.</p><p class="pro dtech">A DPDT wired as a polarity reverser: the throws are cross-connected, so both outputs swap when the poles move.</p></details>
   </div>
@@ -486,8 +495,9 @@
 </main>
 
 <aside class="inst" id="inst" aria-label="Instruments">
-  <div class="inst-head"><span class="led" id="led"></span><span id="scopeTitle">Scope · v–i</span><span class="spacer"></span><span class="mono dim" id="scopeInfo"></span></div>
+  <div class="inst-head"><span class="led" id="led"></span><span id="scopeTitle">Scope · v–i</span><span class="spacer"></span><span class="mono dim" id="scopeInfo"></span><button class="ibtn" id="bigR" title="Make the instruments bigger" aria-label="Make the instruments bigger"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button></div>
   <canvas id="scope" class="scope"></canvas>
+  <p class="snote" id="scopeNote" hidden>Live simulation of the filament model (published equations, illustrative numbers), not recorded lab data. Real measurements look like this, only noisier.</p>
   <div class="ro" id="ro"></div>
   <div class="inst-head sub"><span id="p2Title">—</span><span class="spacer"></span><span class="mono dim" id="p2Info"></span></div>
   <canvas id="plot2" class="plot2"></canvas>

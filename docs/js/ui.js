@@ -122,6 +122,8 @@ export function initUI(ctx) {
       $$('.symbox', root).forEach((b) => (b.innerHTML = SYM[b.dataset.sym] || ''));
       if ($('#wpipe', root)) pipeWidget(root);
       if ($('#xbar', root)) crossbarWidget($('#xbar', root));
+      if ($('#ledcalc', root)) ledCalc($('#ledcalc', root));
+      $$('.myth', root).forEach((b) => b.addEventListener('click', () => b.classList.toggle('open')));
     });
   }
   function pipeWidget(root) {
@@ -163,6 +165,23 @@ export function initUI(ctx) {
     el.addEventListener('click', (e) => { const b = e.target.closest('.xc'); if (!b) return; G[b.dataset.r][b.dataset.c] = (G[b.dataset.r][b.dataset.c] + 1) % 4; draw(); });
     el.addEventListener('input', (e) => { const i = e.target.closest('[data-v]'); if (!i) return; Vin[i.dataset.v] = +i.value; $(`[data-o="${i.dataset.v}"]`, el).textContent = (+i.value).toFixed(1) + ' V'; draw(); });
     draw();
+  }
+
+  function ledCalc(el) {
+    const V = $('#lcV', el), I = $('#lcI', el); let vf = 2.2, col = '#30d158';
+    const E12 = [1, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2];
+    const std = (r) => { const d = Math.pow(10, Math.floor(Math.log10(r))); for (const e of E12) if (e * d >= r - 1e-9) return e * d; return 10 * d; };
+    const upd = () => {
+      for (const s of [V, I]) s.style.setProperty('--p', ((s.value - s.min) / (s.max - s.min)) * 100 + '%');
+      const v = +V.value, i = +I.value / 1000; $('#lcVo', el).textContent = v.toFixed(1) + ' V'; $('#lcIo', el).textContent = I.value + ' mA';
+      const r = (v - vf) / i, rs = std(r), act = (v - vf) / rs * 1000;
+      $('#lcR', el).textContent = r.toFixed(0) + ' Ω'; $('#lcStd', el).textContent = rs >= 1000 ? (rs / 1000).toFixed(1) + ' kΩ' : rs.toFixed(0) + ' Ω'; $('#lcAct', el).textContent = act.toFixed(1) + ' mA';
+      const led = $('#lcLed', el); led.style.setProperty('--c', col); led.style.setProperty('--b', Math.min(1, act / 20).toFixed(2));
+      $('#lcW', el).innerHTML = +I.value > 20 ? '⚠ Above about 20 mA most small LEDs overheat and burn out.' : v - vf < 0.5 ? 'The battery barely beats the LED voltage, so the brightness will be unreliable.' : '';
+    };
+    V.addEventListener('input', upd); I.addEventListener('input', upd);
+    $('#lcCol', el).addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; $$('#lcCol button', el).forEach((x) => x.classList.toggle('on', x === b)); vf = +b.dataset.vf; col = b.dataset.c; upd(); });
+    upd();
   }
 
   /* ── x-ray ─────────────────────────────────────── */
@@ -224,6 +243,9 @@ export function initUI(ctx) {
     else if (t === 'xray') setXray(!xray);
     else if (t === 'parts') openParts();
   });
+
+  // any [data-art] link outside the menu opens that deep dive
+  document.addEventListener('click', (e) => { const a = e.target.closest('[data-art]'); if (a && !a.closest('#menu')) openArticle(a.dataset.art); });
 
   addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;

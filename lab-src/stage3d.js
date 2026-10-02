@@ -122,7 +122,7 @@ export class Stage {
     this.ok = false;
     this.reduced = false; this.fixed = false;
     this.coarse = matchMedia('(pointer:coarse)').matches;
-    this.scale = this.coarse ? 0.85 : 1;
+    this.scale = 1;
     this.maxDpr = Math.min(window.devicePixelRatio || 1, this.coarse ? 2 : 1.75);
     this.center = [0.5, 0.5];
     this.cam = { az: 0.62, el: 0.34, dist: 6.4, tx: 0, ty: 0.48, tz: 0 };
@@ -421,7 +421,7 @@ void main(){
     };
 
     // jumper wires: insulated, stripped tinned ends going into holes
-    this.flows = [];
+    this.flows = []; this.wireCurves = [];
     const jumper = (a, b, color, h, sign = 1) => {
       const up = 0.06;
       const A = a.clone().add(V3(0, up, 0)), B = b.clone().add(V3(0, up, 0));
@@ -432,7 +432,7 @@ void main(){
       const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.03, 12), ins); m.castShadow = true; m.userData.term = 'jumper';
       const f = new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.036, 12), flowMat(0xfff0c0)); f.userData.sign = sign;
       f.material.uniforms.uK.value = 10 + len * 12;
-      bd.add(m, f); this.flows.push(f);
+      bd.add(m, f); this.flows.push(f); this.wireCurves.push({ curve, sign });
       for (const p of [a, b]) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, up + 0.06, 8), tinned); t.position.set(p.x, p.y + (up - 0.06) / 2, p.z); bd.add(t); }
       return m;
     };
@@ -538,6 +538,16 @@ void main(){
     // − rails tied together at the right end
     jumper(V3(colX(29), top, RAIL.tm * P), V3(colX(29), top, RAIL.bm * P), 0x15161a, 0.5, 0);
 
+    // --- charge dots that ride along the wires while current flows (direction of conventional current)
+    const PER = 9, NW = this.wireCurves.length;
+    const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(NW * PER * 3), 3));
+    this.dots = new THREE.Points(eg, new THREE.PointsMaterial({ size: 0.06, map: this.T.radial, color: new THREE.Color(1.6, 1.4, 0.8), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, opacity: 0 }));
+    this.dots.renderOrder = 6; bd.add(this.dots); this.dotPh = 0;
+    // a burst of sparks for small celebrations
+    const SN = 90, sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SN * 3), 3));
+    this.sparks = new THREE.Points(sg, new THREE.PointsMaterial({ size: 0.07, map: this.T.radial, color: new THREE.Color(1.2, 2, 1.1), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, opacity: 0 }));
+    this.sparks.renderOrder = 7; this.sparkV = new Float32Array(SN * 3); this.sparkT = -1; bd.add(this.sparks);
+
     // --- 2×AA battery holder beside the board, leads into the + and − rails
     const hold = new THREE.Group(); hold.position.set(-1.85, this.benchTop, 0.05); g.add(hold); this.holdG = hold;
     const trayM = new THREE.MeshPhysicalMaterial({ color: 0x121316, roughness: 0.5, clearcoat: 0.2 });
@@ -628,11 +638,8 @@ void main(){
 float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)))*43758.5453); }
 void main(){ vec2 d = vUv - .5;
   vec3 c = texture2D(tDiffuse, vUv).rgb;
-  // a touch of lens fringing toward the corners
-  float ca = dot(d,d) * .006;
-  c.r = texture2D(tDiffuse, vUv + d*ca).r; c.b = texture2D(tDiffuse, vUv - d*ca).b;
   c *= mix(1., .62, smoothstep(.25, .95, length(d*vec2(1.1,1.))));
-  c += (h(vUv*uRes + fract(uT)*100.) - .5) * .018;
+  c += (h(vUv*uRes + fract(uT)*100.) - .5) * .008;
   gl_FragColor = vec4(c, 1.); }`,
     });
     comp.addPass(this.grade);
@@ -754,6 +761,17 @@ void main(){ vec2 d = vUv - .5;
     this.moved = true; this.highlight(name);
   }
   highlight(name) { this.hlName = name; this.hlT = performance.now(); }
+  celebrate() {
+    if (!this.sparks) return;
+    const p = this.sparks.geometry.attributes.position, o = this.ledG.grp.position;
+    for (let k = 0; k < p.count; k++) {
+      p.setXYZ(k, o.x, o.y + 0.25, o.z);
+      const a = Math.random() * Math.PI * 2, up = 0.9 + Math.random() * 1.4, sp = 0.3 + Math.random() * 0.9;
+      this.sparkV[k * 3] = Math.cos(a) * sp; this.sparkV[k * 3 + 1] = up; this.sparkV[k * 3 + 2] = Math.sin(a) * sp;
+    }
+    p.needsUpdate = true; this.sparkT = 0;
+    this.sparks.material.color.setRGB(Math.random() < 0.5 ? 1.2 : 2, 2, 1.1);
+  }
   set(obj) { Object.assign(this.sT, obj); }
   setNow(obj) { Object.assign(this.sT, obj); Object.assign(this.s, obj); }
   view(v) { Object.assign(this.camT, v); }
@@ -795,6 +813,7 @@ void main(){ vec2 d = vUv - .5;
       case 'bat': return w(this.holdG, [0, 0.7, 0]);
       case 'res': return w(this.resG, [0, 0.08, 0]);
       case 'board': return w(this.bd, [0, BB.H, 0]);
+      case 'boardEdge': return w(this.bd, [colX(3), BB.H, RAIL.bp * P + 0.02]);
       case 'railT': return w(this.bd, [colX(18), BB.H, RAIL.tp * P]);
       case 'railB': return w(this.bd, [colX(18), BB.H, RAIL.bp * P]);
       case 'strip': return w(this.bd, [colX(27), BB.H, ROWS.c * P]);
@@ -884,6 +903,24 @@ void main(){ vec2 d = vUv - .5;
       for (const f of this.flows) { const u = f.material.uniforms; u.uI.value = Math.abs(s.bbCur) * 2.2 * (f.userData.sign === 0 ? 0.6 : 1); u.uT.value = t; u.uDir.value = Math.sign(s.bbCur || 1) * (f.userData.sign || 1); }
       const lc = s.part === 2 ? new THREE.Color(1.2, 0.9, 2.4) : s.part === 1 ? new THREE.Color(0.25, 0.25, 0.25) : new THREE.Color(2.2, 1.3, 0.4).lerp(new THREE.Color(0.8, 2.0, 2.6), s.boxX);
       this.logoM.color.copy(lc).multiplyScalar(0.25 + 0.9 * (s.part === 1 ? 0.3 : s.boxX));
+      // charge dots
+      const cur = s.bbCur, ap = this.dots.geometry.attributes.position, PER = 9;
+      this.dotPh += (this.dtLast || 0.016) * (0.25 + 1.4 * Math.min(1, Math.abs(cur) * 4)) * Math.sign(cur || 1);
+      this.wireCurves.forEach((w, wi) => {
+        for (let k = 0; k < PER; k++) {
+          let u = (k / PER + this.dotPh * (w.sign || 1) * 0.6) % 1; if (u < 0) u += 1;
+          const q = w.curve.getPointAt(u); ap.setXYZ(wi * PER + k, q.x, q.y, q.z);
+        }
+      });
+      ap.needsUpdate = true;
+      this.dots.material.opacity = Math.abs(cur) > 0.004 ? 0.6 + 0.4 * Math.min(1, Math.abs(cur) * 4) : 0;
+      // sparks
+      if (this.sparkT >= 0) {
+        const dt = this.dtLast || 0.016, sp = this.sparks.geometry.attributes.position; this.sparkT += dt;
+        for (let k = 0; k < sp.count; k++) { this.sparkV[k * 3 + 1] -= 3.2 * dt; sp.setXYZ(k, sp.getX(k) + this.sparkV[k * 3] * dt, Math.max(BB.H, sp.getY(k) + this.sparkV[k * 3 + 1] * dt), sp.getZ(k) + this.sparkV[k * 3 + 2] * dt); }
+        sp.needsUpdate = true; this.sparks.material.opacity = Math.max(0, 1 - this.sparkT / 1.6);
+        if (this.sparkT > 1.6) this.sparkT = -1;
+      }
       const xr = s.xray;
       this.bbInside.visible = xr > 0.01;
       this.bbBodyM.opacity = 1 - 0.86 * xr; this.bbFaceM.opacity = 1 - 0.9 * xr;
@@ -903,7 +940,7 @@ void main(){ vec2 d = vUv - .5;
   }
 
   frame(now) {
-    const dt = this.lastT ? Math.min(0.1, (now - this.lastT) / 1000) : 1 / 60;
+    const dt = this.lastT ? Math.min(0.1, (now - this.lastT) / 1000) : 1 / 60; this.dtLast = dt;
     if (this.lastT) this.frameMs += ((now - this.lastT) - this.frameMs) * 0.05;
     this.lastT = now;
     const VIS = ['devVis', 'capVis', 'torVis', 'bbVis'];
@@ -933,12 +970,14 @@ void main(){ vec2 d = vUv - .5;
 
   adapt(now) {
     if (this.fixed || !this.r) return;
-    if (!this.nextAdapt) this.nextAdapt = now + 2000;
+    if (!this.nextAdapt) this.nextAdapt = now + 2500;
     if (now < this.nextAdapt) return;
-    this.nextAdapt = now + 900;
+    this.nextAdapt = now + 1000;
     const ms = this.frameMs; let s = this.scale;
-    if (ms > 26) s *= 0.82; else if (ms > 20) s *= 0.92; else if (ms < 17.5) s *= 1.05;
-    s = Math.max(0.45, Math.min(1, s));
+    // lower bloom/shadow cost first, resolution last, and never below 75%
+    if (ms > 30) { if (this.key.castShadow) { this.key.castShadow = false; return; } s *= 0.9; }
+    else if (ms > 22) s *= 0.96; else if (ms < 18) s *= 1.08;
+    s = Math.max(0.75, Math.min(1, s));
     if (Math.abs(s - this.scale) > 0.02) { this.scale = s; this.resize(); }
   }
 }

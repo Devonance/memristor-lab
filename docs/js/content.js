@@ -79,7 +79,7 @@ export const PARTS = [
     key: 'breadboard', name: 'Breadboard', anchor: 'board', sym: 'breadboard', anatomy: true,
     what: 'A white plastic board for building circuits without soldering. Hidden under the holes are <b>metal spring clips</b> that grip a wire and join it to its neighbours.',
     here: 'Everything plugs into it. It decides which legs are connected to which, so understanding it is the key to reading the circuit.',
-    read: ['<b>Power rails</b>: the long rows along each edge, marked <span class="c-red">+ red</span> and <span class="c-cyan">− blue</span>. Every hole along a rail is connected.', '<b>Component strips</b>: each numbered column has two short strips of 5 holes (a–e and f–j). The 5 holes in a strip are connected to each other, but not to the next column.', '<b>Centre trench</b>: the groove down the middle separates the two halves, so a chip or button can straddle it without shorting its legs together.', '<b>Hole names</b> are like map coordinates: “c14” means row c, column 14.'],
+    read: ['<b>Power rails</b>: the long rows along each edge, marked <span class="c-red">+ red</span> and <span class="c-cyan">− blue</span>. Every hole along a rail is connected.', '<b>Component strips</b>: each numbered column has two short strips of 5 holes (a–e and f–j). The 5 holes in a strip are connected to each other, but not to the next column.', '<b>Centre trench</b>: the groove down the middle separates the two halves, so a chip or button can straddle it without shorting its legs together.', '<b>Hole names</b> are like map coordinates: “c14” means row c, column 14.', '<b>Gotcha:</b> on many boards the top and bottom rails are <em>not</em> connected to each other. That is why a black jumper on the right ties our two − rails together.'],
     where: 'The whole white board. Use <b>See inside</b> to reveal the metal strips.',
     tech: 'Half-size, 400 tie points, 0.1" (2.54 mm) pitch. Contact resistance ~10–50 mΩ per clip.',
   },
@@ -132,7 +132,19 @@ export const ARTICLES = [
 </div>
 <ul><li><b>Voltage</b> (volts, V) is the push, like water pressure.</li><li><b>Current</b> (amps, A) is the flow: how much passes each second.</li><li><b>Resistance</b> (ohms, Ω) is how hard the pipe makes it to flow.</li></ul>
 <p>They are tied together by <b>Ohm's law</b>: current = voltage ÷ resistance. Double the push and you double the flow. Double the narrowness and you halve it. A memristor is a pipe whose width changes depending on how much water has already flowed through it.</p>
-<p class="pro">I = V/R; power P = V·I. A memristor replaces the constant R with M(q), where q = ∫I dt.</p>`,
+<p class="pro">I = V/R; power P = V·I. A memristor replaces the constant R with M(q), where q = ∫I dt.</p>
+<h4 class="ah4">Myth or fact? Tap a card</h4>
+<div class="myths">
+  <button class="myth"><b>“A bulb uses up the current.”</b><span><b class="c-red">Myth.</b> The same current flows in and out. What gets used is <em>energy</em>, which turns into light and heat.</span></button>
+  <button class="myth"><b>“A battery is full of electricity.”</b><span><b class="c-red">Myth.</b> It stores <em>chemical</em> energy. The chemistry pushes charges that are already in the wires around the loop.</span></button>
+  <button class="myth"><b>“A battery always gives the same current.”</b><span><b class="c-red">Myth.</b> It gives (roughly) the same <em>push</em>. The resistance in the circuit decides how much current flows.</span></button>
+  <button class="myth"><b>“Nothing happens unless the loop is closed.”</b><span><b class="c-green">Fact.</b> Electricity needs a complete path from + back to −. A single gap stops everything. That's what a switch is.</span></button>
+</div>
+<h4 class="ah4">Fast signal, slow electrons</h4>
+<p>Flip a switch and the light comes on almost instantly, because the <em>push</em> travels down the wire at roughly two-thirds the speed of light. The electrons themselves barely move. In a household-size copper wire carrying 20 A they drift at about <b>0.45 mm per second</b>, so one electron would need over half an hour to travel a metre. Think of a pipe already full of water: push at one end and water comes out of the other end straight away.</p>
+<p class="note">Sources: OpenStax <i>College Physics 2e</i>, Example 20.3; typical cable velocity factor ≈ 0.66.</p>
+<h4 class="ah4">Safe tinkering</h4>
+<ul><li>AA batteries and a breadboard, like this lab, are a safe way to start.</li><li>Never short a battery's + and − together, and keep loose cells away from keys and coins. Lithium cells can overheat or catch fire when shorted.</li><li>Never experiment with wall (mains) electricity. It can kill.</li></ul>`,
   },
   {
     id: 'symbols', title: 'How to read a circuit diagram', blurb: 'The symbols engineers use, and what each one means.',
@@ -148,6 +160,36 @@ export const ARTICLES = [
 <p class="note">Tap a cell to change its stored value. Drag the input sliders. The output bars are the column currents: the result of the multiplication.</p>
 <p>The catch is everything you've seen in this lab. Real devices are noisy, drift over time, switch unevenly, and differ from one another. A lot of current research models exactly those imperfections to predict how accurate an AI chip will be.</p>
 <p class="pro">Analog in-memory MVM: I_j = Σ_i G_ij V_i. Key non-idealities: conductance-update nonlinearity and asymmetry, cycle-to-cycle noise, retention and drift, read disturb, endurance. Tools such as IBM's AIHWKit and NeuroSim fold these into network-level accuracy estimates.</p>`,
+  },
+  {
+    id: 'ledcalc', title: 'Pick the right resistor for an LED', blurb: 'A calculator that shows why the 220 Ω resistor is there.',
+    html: `<p>An LED needs about 2 V before it lights, but above that its current shoots up. Too much current and it burns out in a flash. A resistor in series takes up the extra voltage and sets the current.</p>
+<div class="ledcalc" id="ledcalc">
+  <div class="lcrow"><label class="sl"><span>Battery voltage <output id="lcVo">5.0 V</output></span><input id="lcV" type="range" min="3" max="12" step="0.5" value="5"></label></div>
+  <div class="lcrow"><span class="lclab">LED colour</span><div class="seg small" id="lcCol"><button data-vf="1.8" data-c="#ff3b30">Red</button><button data-vf="2.1" data-c="#ffd60a">Yellow</button><button data-vf="2.2" data-c="#30d158" class="on">Green</button><button data-vf="3.1" data-c="#64d2ff">Blue</button><button data-vf="3.1" data-c="#ffffff">White</button></div></div>
+  <div class="lcrow"><label class="sl"><span>Brightness (current) <output id="lcIo">15 mA</output></span><input id="lcI" type="range" min="2" max="30" step="1" value="15"></label></div>
+  <div class="lcout"><div class="lcled" id="lcLed"></div><div><p>Resistor needed: <b id="lcR">—</b></p><p>Nearest standard value: <b id="lcStd">—</b> → actual current <b id="lcAct">—</b></p><p class="lcwarn" id="lcW"></p></div></div>
+</div>
+<p><b>The rule:</b> resistor = (battery voltage − LED voltage) ÷ current. With 5 V, a red LED (about 2 V) and 15 mA: (5 − 2) ÷ 0.015 = 200 Ω. Round up to the next standard value, 220 Ω, which gives about 13.6 mA. Most small LEDs are rated for about 20 mA.</p>
+<p class="note">Based on the guidance in SparkFun's <i>Light-Emitting Diodes</i> and Adafruit's <i>All About LEDs</i> tutorials.</p>`,
+  },
+  {
+    id: 'realworld', title: 'Memristors in the real world', blurb: 'Where resistive memory already ships, and the record-breaking lab chips.',
+    html: `<p>Whatever you call them, resistive memory cells, the real-world memristors, are already in products.</p>
+<ul class="rw">
+<li><b>2013 · Panasonic</b> began mass-producing the first microcontrollers with built-in ReRAM (the MN101LR series).</li>
+<li><b>2021–2023 · TSMC</b>, the world's largest chip foundry, put embedded RRAM into volume production at 40, 28 and 22 nm, with 12 nm in development. At 12 nm, one memory cell is about 0.025 µm², hundreds of times narrower than a human hair.</li>
+<li><b>2022 · Infineon</b> announced its AURIX TC4x car microcontrollers would use TSMC's 28 nm RRAM.</li>
+<li><b>2025 · Weebit Nano</b> reported its ReRAM passed the AEC-Q100 automotive qualification at 150 °C.</li>
+</ul>
+<p>And in the lab, memristor chips are doing AI:</p>
+<ul class="rw">
+<li><b>2022 · NeuRRAM</b> (Nature): 48 cores and about 3 million RRAM cells computing neural networks inside memory.</li>
+<li><b>2023</b> (Nature): one memristor reliably held <b>2,048 distinct levels</b>, more than 11 bits in a single device.</li>
+<li><b>Note:</b> IBM's well-known analog AI chips use <em>phase-change</em> memory, a related technology, not RRAM.</li>
+</ul>
+<p><b>Typical numbers</b> for today's embedded RRAM: data retention around 10 years at 85–125 °C, and 10,000–100,000 rewrites. Research cells reach far more, up to about a trillion cycles in some materials, with a trade-off between endurance and retention.</p>
+<p class="note">Sources: Panasonic via phys.org (2013); TSMC annual reports 2023–24 and ISSCC 2024; Infineon press release (Nov 2022); Weebit Nano press release (Mar 2025); Wan et al., Nature 608 (2022); Rao et al., Nature 615 (2023). Figures are as reported by those sources.</p>`,
   },
   {
     id: 'names', title: 'The naming fight, explained', blurb: 'Why smart people disagree about whether memristors exist.',

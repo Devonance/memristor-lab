@@ -4,6 +4,7 @@ import { Ideal, HP, Threshold, Filament, Mott, CapTest, WINDOWS, wave, loopArea,
 import { Plot, Scope, Strip, COL, fmt } from './plot.js';
 import { TERMS, autoLink } from './glossary.js';
 import { initUI } from './ui.js';
+import { Sound } from './audio.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -11,6 +12,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const stage = new Stage($('#stage'));
 window.__stage = stage;
+const sound = new Sound();
 stage.reduced = reduced;
 const Q = new URLSearchParams(location.search);
 if (Q.has('hq')) { stage.scale = +Q.get('hq') || 1; stage.fixed = true; }
@@ -224,19 +226,35 @@ function snapSheet(state) { sheetState = state; setSheet(snaps()[state]); }
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
   grip.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); snapSheet(sheetState === 'full' ? 'half' : 'full'); } });
 }
+// desktop drawers: slide the text (left) and instruments (right) away and back
+const drawers = { L: false, R: false, big: false };
+try { Object.assign(drawers, JSON.parse(localStorage.getItem('ml-drawers') || '{}')); } catch (e) { /* fine */ }
+function applyDrawers() {
+  document.body.classList.toggle('hideL', drawers.L); document.body.classList.toggle('hideR', drawers.R); document.body.classList.toggle('bigR', drawers.big);
+  $('#tabL').setAttribute('aria-expanded', !drawers.L); $('#tabL').setAttribute('aria-label', drawers.L ? 'Show the text panel' : 'Hide the text panel');
+  $('#tabR').setAttribute('aria-expanded', !drawers.R); $('#tabR').setAttribute('aria-label', drawers.R ? 'Show the instruments' : 'Hide the instruments');
+  try { localStorage.setItem('ml-drawers', JSON.stringify(drawers)); } catch (e) { /* fine */ }
+  // re-centre the bench smoothly while the panels slide
+  const t0 = performance.now(); const step = () => { layout(); if (performance.now() - t0 < 420) requestAnimationFrame(step); }; step();
+}
+for (const el of [$('#story'), $('#inst')]) el.addEventListener('transitionend', (e) => { if (e.target === el && e.propertyName === 'transform') layout(); });
+function toggleDrawer(k) { drawers[k] = !drawers[k]; applyDrawers(); }
+$('#tabL').addEventListener('click', () => toggleDrawer('L'));
+$('#tabR').addEventListener('click', () => toggleDrawer('R'));
+$('#bigR').addEventListener('click', () => { drawers.big = !drawers.big; if (drawers.big) drawers.R = false; applyDrawers(); setTimeout(() => { scope.resize(); p2.resize(); }, 320); });
+addEventListener('keydown', (e) => { if (e.target.closest('input,textarea') || mobile) return; if (e.key === '[') toggleDrawer('L'); if (e.key === ']') toggleDrawer('R'); });
 function toggleImmersive() {
   if (mobile) { snapSheet(sheetState === 'peek' ? 'half' : 'peek'); return; }
-  immersive = !immersive; document.body.classList.toggle('immersive', immersive); layout();
+  const both = !(drawers.L && drawers.R); drawers.L = both; drawers.R = both; applyDrawers();
 }
 function reveal() { if (mobile) snapSheet('peek'); }
 function layout() {
   mobile = innerWidth <= 900;
   stage.resize();
   if (!mobile) {
-    if (immersive) { stage.center = [0.5, 0.47]; zoomK = clamp(1100 / innerWidth, 0.8, 1.3); }
-    else {
+    {
       const s = $('#story').getBoundingClientRect(), I = $('#inst').getBoundingClientRect();
-      const L = s.right, R = I.left, gap = Math.max(200, R - L);
+      const L = Math.max(0, s.right), R = Math.min(innerWidth, I.left), gap = Math.max(200, R - L);
       stage.center = [(L + R) / 2 / innerWidth, 0.45];
       zoomK = clamp(860 / gap, 0.9, 2.1) * clamp(800 / innerHeight, 0.85, 1.25);
     }
@@ -265,7 +283,7 @@ function filamentStation(o) {
     cam: o.cam, labels: o.labels,
     setA(v) { A = v; }, setF(v) { f = v; }, setLog(v) { logI = v; scope.reset(); },
     enter() {
-      heads('Scope · v–i', o.p2 || 'Live traces', o.cap || '');
+      heads('Scope · v–i', o.p2 || 'Live traces', o.cap || ''); $('#scopeNote').hidden = false;
       readouts([['v', 'Voltage'], ['i', 'Current'], ['g', 'Gap g'], ['T', 'Filament T'], ['R', 'Read R'], ['s', 'State']]);
       o.enter && o.enter.call(this);
     },
@@ -315,12 +333,13 @@ chapters[1] = (() => {
   const real = new Threshold({ Ron: 0.1, Roff: 10, von: 0.9, voff: -0.9, kon: 4, koff: 4, a: 2 });
   let part = 0, Vb = 3, dir = 1, pressed = false, i = 0, vbox = 0, R = 10, holdT = 0, bright0 = 0, q0 = 0, gL = 0, rL = 0;
   const done = new Set();
-  const quest = (k) => { if (done.has(k)) return; done.add(k); const li = $(`#quest li[data-q="${k}"]`); li && li.classList.add('ok'); };
+  const quest = (k) => { if (done.has(k)) return; done.add(k); const li = $(`#quest li[data-q="${k}"]`); li && li.classList.add('ok'); sound.sfx('quest'); stage.celebrate && stage.celebrate(); };
   const press = (on) => {
     if (on && !pressed) { holdT = 0; bright0 = -1; q0 = box.q; if (part === 0 && done.has('hold') && dir > 0 && box.M(box.q) < 3) quest('mem'); }
+    if (on !== pressed) sound.sfx(on ? 'press' : 'release');
     pressed = on; $('#bbPress').classList.toggle('down', on);
   };
-  const setDir = (d) => { dir = d; const t = $('#bbDirT'); t.textContent = d > 0 ? '→ forward' : '← reverse'; t.className = d > 0 ? 'c-green' : 'c-red'; };
+  const setDir = (d) => { sound.sfx('flip'); dir = d; const t = $('#bbDirT'); t.textContent = d > 0 ? '→ forward' : '← reverse'; t.className = d > 0 ? 'c-green' : 'c-red'; };
   const setPart = (p) => { part = p; $$('#partseg button').forEach((b) => b.classList.toggle('on', +b.dataset.p === p)); scope.reset(); };
   const pb = $('#bbPress');
   pb.addEventListener('pointerdown', (e) => { e.preventDefault(); pb.setPointerCapture(e.pointerId); press(true); });
@@ -344,6 +363,7 @@ chapters[1] = (() => {
       { a: 'box', t: 'M?', c: COL.amber, hot: true, click: () => setPart((part + 1) % 3), text: () => `${partName()}<em>tap to swap</em>` },
       { a: 'ledg', t: 'Green LED', c: COL.green },
       { a: 'ledr', t: 'Red LED', c: COL.red },
+      { a: 'boardEdge', t: 'How does this board work?', c: COL.cyan, hot: true, side: 'l', click: () => { const t = $('#bbXrayT'); t.checked = !t.checked; t.dispatchEvent(new Event('change')); }, text: () => (anatOn ? 'X-ray on<em>tap to turn off</em>' : 'How does this board work?<em>tap for X-ray</em>') },
     ],
     exit() { press(false); },
     action(a, down) { if (a === 'btn') press(down); else if (down && a === 'sw') setDir(-dir); else if (down && a === 'box') setPart((part + 1) % 3); },
@@ -701,6 +721,8 @@ chapters[9] = (() => {
     labels: [{ a: 'cap', t: 'Series capacitor', s: 'q = device charge', c: COL.amber }, { a: 'te', t: 'Device under test', c: COL.cyan, side: 'l' }],
     enter() { heads('Scope · device v–i during the test', 'Resistance R/R₀ during the test', 'Resistance relative to its starting value, over a time axis that speeds up as the capacitor drains. The faint fill is capacitor charge, which always returns to zero.'); readouts([['q', 'Capacitor q'], ['ri', 'Ideal R/R₀'], ['rr', 'Real R/R₀']]); setTimeout(() => { if (cur === 9 && !run) start(); }, 700); },
     exit() { run = null; $('#b8run').disabled = false; },
+    // run the whole test at once (used when recording the demo video)
+    finishNow() { if (!run) start(); for (let k = 0; k < 6000 && run && !run.done; k++) this.tick(0.05, performance.now()); },
     tick(dt, now) {
       if (run && !run.done) {
         const inPulse = run.t < run.tEnd + 0.15;
@@ -863,7 +885,9 @@ function go(n) {
   if (n === cur) return;
   if (ch && ch.exit) ch.exit();
   cur = n; ch = chapters[n]; seen.add(n);
-  if (ui && n !== 1) { ui.setXray(false); const xb = $('#bbXray'); if (xb) xb.textContent = 'See inside the breadboard'; }
+  if (ui && n !== 1 && anatOn) ui.setXray(false);
+  document.body.className = document.body.className.replace(/\bst\d+\b/g, '').trim() + ' st' + n;
+  sound.sfx('step');
   stage.resetView && stage.resetView();
   sections.forEach((s, k) => s.classList.toggle('on', k === n));
   $$('#dots button').forEach((b, k) => { b.classList.toggle('on', k === n); if (k === n) b.classList.add('seen'); });
@@ -874,6 +898,7 @@ function go(n) {
   history.replaceState(null, '', '#' + n);
   stage.set({ ...BASE, ...ch.stage });
   setLabels(ch.labels);
+  $('#scopeNote').hidden = true;
   scope.reset(); strip.reset(); drv.ph = 0;
   placeP2();
   scope.resize(); p2.resize();
@@ -904,10 +929,33 @@ ui = initUI({
   stage, go, sections, seen, linkify: autoLink, reveal, toggleImmersive,
   getCur: () => cur,
   openGloss: () => openGloss(),
-  anatomyLabels: (on) => { anatOn = on && cur === 1; setLabels(anatOn ? [...ch.labels, ...ANAT] : ch.labels); },
+  anatomyLabels: (on) => { anatOn = on && cur === 1; setLabels(anatOn ? [...ch.labels, ...ANAT] : ch.labels); const t = $('#bbXrayT'); if (t) t.checked = on; $('#xcall').classList.toggle('on', on); sound.sfx(on ? 'xray' : 'release'); },
 });
 $('#bbParts').addEventListener('click', () => ui.openParts());
-$('#bbXray').addEventListener('click', () => { const on = !anatOn; ui.setXray(on); $('#bbXray').textContent = on ? 'Back to normal view' : 'See inside the breadboard'; if (on) { reveal(); stage.focus('board', 0.95); } });
+// X-ray is a toggle: off by default, and beginners are pointed to it
+const xrayT = $('#bbXrayT');
+xrayT.addEventListener('change', () => { ui.setXray(xrayT.checked); if (xrayT.checked) { reveal(); stage.focus('board', 0.95); } else stage.resetView(); });
+
+/* ── sound: one obvious mute button for music and effects ── */
+const sBtn = $('#soundBtn');
+sound.onChange((on) => { sBtn.classList.toggle('off', !on); sBtn.setAttribute('aria-pressed', on); sBtn.setAttribute('aria-label', on ? 'Mute sound' : 'Turn sound on'); $('b', sBtn).textContent = on ? 'Sound on' : 'Muted'; });
+sBtn.addEventListener('click', () => sound.toggle());
+let toastT;
+function toast(html, ms = 4200) { const t = $('#toast'); t.innerHTML = html; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms); }
+addEventListener('pointerdown', () => { if (sound.on) setTimeout(() => toast('♪ Soft music is playing. Tap <b>Sound on</b> at the top to mute it.'), 900); }, { once: true });
+
+/* ── a tiny automation hook (used to record the demo video; harmless otherwise) ── */
+window.__lab = {
+  go, setMode,
+  press: (on) => chapters[1].action('btn', on),
+  flip: () => chapters[1].action('sw', true),
+  xray: (on) => { const t = $('#bbXrayT'); if (t.checked !== on) { t.checked = on; t.dispatchEvent(new Event('change')); } },
+  drive: (v) => { if (v === null) { releaseManual(); } else { manual.on = true; manual.v = v; } },
+  focus: (n, z) => stage.focus(n, z), reset: () => stage.resetView(),
+  sheet: (st) => snapSheet(st), parts: (k) => ui.openParts(k), close: () => ui.closeAll(),
+  scrollStory: (y) => { $('#story').scrollTop = y; },
+  finishTest: () => chapters[9].finishNow(),
+};
 
 /* ── frame loop ───────────────────────────────────────── */
 let last = 0;
@@ -930,6 +978,7 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
+applyDrawers();
 layout();
 go(+location.hash.slice(1) || 0);
 stage.setNow({ ...BASE, ...ch.stage, devVis: 0, capVis: 0, torVis: 0, bbVis: 0 });
