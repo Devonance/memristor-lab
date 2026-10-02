@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en" data-mode="simple">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Memristor Lab — The Missing Element</title>
+<meta name="description" content="An interactive lab on the memristor: build one into a breadboard circuit, watch a filament grow, run the capacitor test, and see why the ideal memristor has still not been found. Simple and technical modes.">
+<meta name="theme-color" content="#07090d">
+<meta property="og:title" content="Memristor Lab — The Missing Element">
+<meta property="og:description" content="Wire a black-box memristor to an LED, drive a glass RRAM cell, run the capacitor test. For curious people and for engineers.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307090d'/%3E%3Cpath d='M5 16c3-8 6-8 11 0s8 8 11 0' fill='none' stroke='%235ad8ff' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M5 16c3 8 6 8 11 0s8-8 11 0' fill='none' stroke='%23ffb547' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="modulepreload" href="js/stage.js">
+<link rel="modulepreload" href="js/models.js">
+<link rel="modulepreload" href="js/plot.js">
+<link rel="stylesheet" href="css/lab.css">
+<script>document.documentElement.classList.add('js');try{var m=localStorage.getItem('ml-mode');if(m)document.documentElement.dataset.mode=m}catch(e){}</script>
+</head>
+<body>
+<canvas id="stage" aria-label="3D view of the lab bench. Drag to orbit."></canvas>
+<div id="labels"></div>
+
+<div class="tools" id="tools" aria-label="3D view controls">
+  <button data-tool="reset" title="Reset view (double-tap the bench)" aria-label="Reset view"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+  <button data-tool="in" title="Zoom in (pinch or scroll)" aria-label="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6M20 20l-4-4"/></svg></button>
+  <button data-tool="out" title="Zoom out" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg></button>
+  <button data-tool="labels" class="on" title="Labels on/off" aria-label="Labels on or off"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></button>
+  <button data-tool="full" title="Focus on the 3D bench" aria-label="Focus on the 3D bench"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</div>
+
+<header class="topbar">
+  <button class="menubtn" id="menuBtn" aria-label="Open the menu"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><b>Menu</b></button>
+  <a class="brand" href="#0"><span class="brand-mark" aria-hidden="true"></span><span>Memristor&nbsp;Lab</span></a>
+  <nav class="dots" id="dots" aria-label="Stations"></nav>
+  <button class="gbtn" id="glossBtn" aria-label="Open the glossary"><span aria-hidden="true">Aa</span><b>Glossary</b></button>
+  <div class="mode" id="mode" role="group" aria-label="Explanation level">
+    <button data-m="simple" title="Plain English, no equations">Simple</button><button data-m="tech" title="Equations, models and references for engineers, physicists and mathematicians">Technical</button>
+  </div>
+</header>
+
+<main id="story" class="story">
+<div class="grip" id="grip" role="button" tabindex="0" aria-label="Drag or tap to resize the text panel"><span></span></div>
+
+<!-- 0 ── start ─────────────────────────────────────── -->
+<section class="step" id="s0" data-title="Start">
+  <p class="kicker">Memristor Lab · an open question, opened up</p>
+  <h1>The Missing<br>Element</h1>
+  <div class="lay">
+    <p class="lede">Every gadget you own is built from a few basic parts. In 1971 an engineer called Leon Chua predicted one more: a <b>resistor with a memory</b>. It would remember how much electricity had flowed through it, even after the power went off.</p>
+    <p>Fifty-five years later, chips that behave <em>a lot</em> like it exist. But the perfect version from Chua's equation has never been found, and scientists still argue about whether it can exist at all.</p>
+    <p>On the bench is one of those real chips, magnified. The glass block is a sliver of oxide between two metal strips. Watch the glowing thread inside grow and shrink, and look at the screen on the right. Its trace makes a <b class="c-cyan">bow tie</b>, the signature of memory.</p>
+  </div>
+  <div class="pro">
+    <p class="lede">In 1971 Leon Chua proposed a fourth fundamental two-terminal element, the memristor, closing the symmetry between charge and flux linkage: <span class="eq">f(<var>q</var>, <var>φ</var>) = 0</span>. Real resistive-switching devices are now modelled very accurately. No device obeying the ideal law has been demonstrated.</p>
+    <p>On the bench: a crossbar RRAM cell (Pt / HfO<sub>x</sub> / TiN), simulated with a Stanford/PKU-type filament-gap model under a slow sinusoidal sweep. The scope shows its <b class="c-cyan">pinched hysteresis loop</b> in the v–i plane.</p>
+  </div>
+  <div class="cards3">
+    <div><b>Settled</b><span class="lay">We can describe real memory chips very well.</span><span class="pro">Real devices are state-variable systems: v = R(x, i)·i, ẋ = f(x, i).</span></div>
+    <div><b>Not found</b><span class="lay">A part that remembers charge and nothing else.</span><span class="pro">Any device obeying v = M(q)·i with M a function of charge alone.</span></div>
+    <div><b>Disputed</b><span class="lay">Whether that perfect part can exist at all.</span><span class="pro">Physical possibility, passivity and thermodynamic consistency, and “fundamental” status.</span></div>
+  </div>
+  <p class="note lay">Use the <b>Simple / Technical</b> switch at the top at any time. Technical mode shows the equations, models and papers. Any <span class="term-demo">dotted word</span> has a plain-English definition: hover or tap it. You can also tap any part on the bench, or open the <b>Glossary</b>.</p>
+  <button class="btn primary" data-go="1">Start: wire one up <span aria-hidden="true">→</span></button>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>What is a “circuit element”, anyway?</summary><p>The simplest building blocks of electronics, each defined by one rule linking two electrical quantities. A resistor links voltage and current, a capacitor links charge and voltage, and an inductor links flux and current. Chua asked whether a fourth rule, linking charge and flux, deserved its own part.</p><p class="pro dtech">A two-terminal element is defined by a constitutive relation between a pair of v, i, q, φ. R: f(v, i) = 0. C: f(q, v) = 0. L: f(φ, i) = 0. Memristor: f(q, φ) = 0.</p></details>
+    <details class="deep"><summary>Why would anyone want a resistor that remembers?</summary><p>Three reasons. Memory chips that keep data with the power off and switch in nanoseconds. Brain-like chips, where a memristor plays the part of a synapse whose strength changes as it learns. And computing inside memory, which saves the energy normally spent shuttling data around. See “Computing inside memory” in the menu.</p><p class="pro dtech">Non-volatile RRAM, analog in-memory matrix–vector multiplication in crossbars (Ohm + Kirchhoff), and neuromorphic synapses. Accuracy is limited by update nonlinearity, cycle-to-cycle noise, drift and endurance.</p></details>
+    <details class="deep"><summary>How to use this lab</summary><p>Drag the bench to rotate it, pinch or scroll to zoom, and tap any part to learn what it is. Dotted words have a plain-English definition. The ☰ menu lists every station, the parts guide, deep dives and settings. Switch to Technical mode at any time for the equations.</p></details>
+  </div>
+</section>
+
+<!-- 1 ── breadboard ────────────────────────────────── -->
+<section class="step" id="s1" data-title="Breadboard">
+  <p class="kicker">01 · Hands on</p>
+  <h2>A part that remembers</h2>
+  <div class="lay">
+    <p>Nobody has built a perfect memristor yet, so we sealed one in a <b>black box</b> and gave it exactly the behaviour Chua's equation describes. It's wired like a starter electronics kit: battery → button → the box → a resistor → two LEDs. <b class="c-green">Green</b> lights when current flows one way, <b class="c-red">red</b> the other way.</p>
+    <p>Picture the box as a <b>water pipe that widens</b> the more water has flowed through it one way, and narrows when water flows back. When the water stops, the pipe <em>stays</em> the width it was.</p>
+  </div>
+  <div class="pro">
+    <p>The black box is an <b>ideal charge-controlled memristor</b>, the component nobody has fabricated:</p>
+    <div class="eqblock">
+      <div><var>v</var> = <var>M</var>(<var>q</var>)·<var>i</var>,&nbsp; <var>q</var> = ∫<var>i</var> d<var>t</var></div>
+      <div><var>M</var>(<var>q</var>) = <var>R</var><sub>on</sub> + (<var>R</var><sub>off</sub> − <var>R</var><sub>on</sub>) / (1 + e<sup>(<var>q</var>−<var>q</var><sub>c</sub>)/<var>q</var><sub>w</sub></sup>)</div>
+    </div>
+    <p>It sits in series with 220 Ω and anti-parallel LEDs (<var>V</var><sub>f</sub> ≈ 2 V), with <var>R</var><sub>on</sub> = 100 Ω and <var>R</var><sub>off</sub> = 10 kΩ. Holding the button integrates charge. The feedback runs lower <var>M</var> → more <var>i</var> → faster d<var>q</var>/d<var>t</var>, so the brightening accelerates. The <i>real cell</i> option swaps in a VTEAM-style threshold device: <var>ẋ</var> = 0 for |<var>v</var>| &lt; <var>v</var><sub>th</sub>.</p>
+  </div>
+  <div class="bbpad">
+    <button class="press" id="bbPress" aria-label="Hold to press the button"><span>HOLD</span><small>push button</small></button>
+    <div class="bbside">
+      <button class="btn" id="bbDir">Direction: <b id="bbDirT" class="c-green">→ forward</b></button>
+      <button class="btn ghost" id="bbReset">Reset box</button>
+    </div>
+  </div>
+  <div class="seg" id="partseg" role="group" aria-label="Part in the socket">
+    <button data-p="0" class="on">Black box “M?”</button><button data-p="1">Plain resistor</button><button data-p="2">Real RRAM cell</button>
+  </div>
+  <label class="sl"><span>Battery <output id="obv">3.0 V</output></span><input id="ibv" type="range" min="2" max="6" step="0.1" value="3"></label>
+  <div class="row"><button class="btn" id="bbParts">Parts guide: what is each piece?</button><button class="btn" id="bbXray">See inside the breadboard</button></div>
+  <p class="kicker sub">Try this</p>
+  <ol class="quest" id="quest">
+    <li data-q="hold">Hold the button for a few seconds. The green LED starts dim and gets <b>brighter</b>.</li>
+    <li data-q="mem">Let go, then tap it again. It's bright <b>straight away</b>, because the box remembered.</li>
+    <li data-q="rev">Flip the direction and hold. Red glows and the box <b>forgets</b>.</li>
+    <li data-q="res">Swap in a plain resistor. The brightness is the same every time: <b>no memory</b>.</li>
+    <li data-q="thr">Swap in the real cell, set the battery under 3 V and press. Nothing changes: a <b>threshold</b>.</li>
+  </ol>
+  <p class="note pro">The difference in the last step matters. The ideal box changes whenever <em>any</em> current flows, so even reading it disturbs it. Real cells have a write threshold, which is what makes them usable memories. It is also one of the things that make them non-ideal.</p>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>How a breadboard is wired inside</summary><p>Under the plastic are springy metal strips. In each numbered column, the five holes a–e share one strip and f–j share another. The long rows along the edges (the power rails) are each one strip running the whole length. The groove down the middle separates the two halves. Tap “See inside the breadboard” to watch the strips appear.</p></details>
+    <details class="deep"><summary>Why the LED needs a resistor</summary><p>An LED barely conducts until about 2 V, then suddenly conducts a lot. Connected straight to a battery it would draw far too much current and burn out. The 220 Ω resistor keeps the current to a few milliamps.</p><p class="pro dtech">With V_f ≈ 2 V and a 3 V supply, I ≈ (3 − 2)/(220 Ω + M). With the box fully ON (M = 100 Ω) that is about 3 mA.</p></details>
+    <details class="deep"><summary>Why the brightening speeds up</summary><p>It’s a feedback loop. Current lowers the box’s resistance, lower resistance lets more current through, and more current lowers the resistance faster still. That’s why the LED creeps up slowly at first and then rushes to full brightness.</p><p class="pro dtech">dq/dt = i = (V − V_f)/(R_s + M(q)) with dM/dq < 0, so the rate of change accelerates as q grows.</p></details>
+    <details class="deep"><summary>How the direction switch reverses the current</summary><p>The slide switch has two sets of contacts that move together. With the two crossed wires (green and blue), sliding it swaps which end of the black box connects to + and which to −, so current flows through the box the other way.</p><p class="pro dtech">A DPDT wired as a polarity reverser: the throws are cross-connected, so both outputs swap when the poles move.</p></details>
+  </div>
+</section>
+
+<!-- 2 ── symmetry ──────────────────────────────────── -->
+<section class="step" id="s2" data-title="Symmetry">
+  <p class="kicker">02 · Chua's symmetry argument, 1971</p>
+  <h2>Four quantities, six links</h2>
+  <div class="lay">
+    <p>Electronics has four basic quantities: <b>voltage</b> (the push), <b>current</b> (the flow), <b>charge</b> (how much has flowed in total) and <b>flux</b> (voltage added up over time). Link them in pairs and you get six links. Five were already taken: two by definition, three by the resistor, capacitor and inductor.</p>
+    <p>One link, between charge and flux, had no part. It was like a gap in the periodic table. Chua predicted a part to fill it.</p>
+  </div>
+  <div class="pro">
+    <p>The four circuit variables <var>v</var>, <var>i</var>, <var>q</var>, <var>φ</var> give six pairwise relations. Two are definitions (<var>i</var> = d<var>q</var>/d<var>t</var>, <var>v</var> = d<var>φ</var>/d<var>t</var>). Three are the constitutive relations of R, C and L. Chua postulated the sixth, <span class="eq">f(<var>q</var>, <var>φ</var>) = 0</span>. Note that <var>φ</var> is flux <em>linkage</em>, <span class="eq">∫<var>v</var> d<var>t</var></span>, and not necessarily a magnetic field. That ambiguity drives much of the later debate.</p>
+  </div>
+  <figure class="quad" id="quad">
+    <svg viewBox="0 0 320 260" role="img" aria-label="Diagram linking v, i, q and phi">
+      <g class="q-edges">
+        <line class="q-def" x1="70" y1="50" x2="70" y2="210"/>
+        <line class="q-def" x1="250" y1="50" x2="250" y2="210"/>
+        <g class="q-el" data-el="R"><line x1="94" y1="38" x2="226" y2="38"/><text x="160" y="28">R · dv = R di</text></g>
+        <g class="q-el" data-el="C"><line x1="82" y1="68" x2="238" y2="192"/><text transform="translate(118 92) rotate(38.5)" y="-6">C · dq = C dv</text></g>
+        <g class="q-el" data-el="L"><line x1="238" y1="68" x2="82" y2="192"/><text transform="translate(202 92) rotate(-38.5)" y="-6">L · dφ = L di</text></g>
+        <g class="q-el q-m" data-el="M"><line x1="94" y1="222" x2="226" y2="222"/><text x="160" y="248">M · dφ = M dq  ?</text></g>
+      </g>
+      <text class="q-dl" x="56" y="134" text-anchor="end">dφ = v dt</text>
+      <text class="q-dl" x="264" y="134" text-anchor="start">dq = i dt</text>
+      <g class="q-nodes">
+        <circle cx="70" cy="38" r="22"/><text x="70" y="45">v</text>
+        <circle cx="250" cy="38" r="22"/><text x="250" y="45">i</text>
+        <circle cx="70" cy="222" r="22"/><text x="70" y="229">φ</text>
+        <circle cx="250" cy="222" r="22"/><text x="250" y="229">q</text>
+      </g>
+    </svg>
+    <figcaption>Tap a link. The scope drives that part with the same wave.</figcaption>
+  </figure>
+  <div class="seg" id="elseg" role="group" aria-label="Element">
+    <button data-el="R">Resistor</button><button data-el="C">Capacitor</button><button data-el="L">Inductor</button><button data-el="M" class="on">Memristor</button>
+  </div>
+  <p class="note" id="elnote"></p>
+  <p class="tip">Press and drag across the scope to drive the voltage by hand.</p>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>The “periodic table” idea, and its critics</summary><p>Chemists once predicted missing elements from gaps in their table, and then found them. Chua’s square of four quantities works the same way, which made the prediction feel inevitable. Critics reply that two of the links are just definitions, not parts, so the “gap” may not be a real gap at all.</p><p class="pro dtech">Abraham (2018) argues the 2008 device is not the 1971 postulate and neither is fundamental. Tellini et al. (2021) reach a similar conclusion within basic circuit theory.</p></details>
+    <details class="deep"><summary>What “flux” really means here</summary><p>Flux linkage is just a running total of voltage over time. In a coil it equals the magnetic field threading the coil. For a memristor, Chua only needs the running total, but some physicists insist a true memristor must involve real magnetism, as an inductor does.</p><p class="pro dtech">φ(t) = ∫v dt. In an inductor φ = NΦ_B. Chua’s definition needs no magnetic field, but critics argue the symmetry argument implies one.</p></details>
+    <details class="deep"><summary>Why each part draws a different shape</summary><p>A resistor’s current rises and falls exactly with the voltage, so the trace is a line. A capacitor’s current peaks when the voltage is changing fastest, a quarter of a cycle ahead, which makes an oval. A memristor’s current is always zero at zero volts, but its resistance changes along the way, so it makes a bow tie.</p></details>
+  </div>
+</section>
+
+<!-- 3 ── ideal ─────────────────────────────────────── -->
+<section class="step" id="s3" data-title="Ideal">
+  <p class="kicker">03 · The ideal memristor</p>
+  <h2>Charge writes the resistance</h2>
+  <div class="lay">
+    <p>In the ideal memristor, the resistance depends on <b>one thing only</b>: how much charge has passed through, in total. Push charge one way and the resistance falls. Pull it back and it rises again.</p>
+    <p>It's like a footpath across a lawn. The more people walk it, the more worn and easier it gets. What matters is the total traffic, not when it happened.</p>
+    <p>The lower graph is the device's “rule book”: a curve whose <b>steepness</b> at the glowing dot is the current resistance.</p>
+  </div>
+  <div class="pro">
+    <div class="eqblock">
+      <div><var>φ</var> = <var>φ̂</var>(<var>q</var>)</div>
+      <div><var>v</var> = <var>M</var>(<var>q</var>) · <var>i</var>,&nbsp; <var>M</var>(<var>q</var>) = d<var>φ̂</var>/d<var>q</var></div>
+    </div>
+    <p>Any monotone constitutive curve <var>φ̂</var>(<var>q</var>) defines a charge-controlled memristor. Its slope at the operating point is the memristance. Because <span class="eq"><var>q</var> = ∫<var>i</var> d<var>t</var></span>, <var>M</var> depends on the entire current history. The dual form is <span class="eq"><var>i</var> = <var>W</var>(<var>φ</var>)·<var>v</var></span> with <span class="eq"><var>W</var> = d<var>q̂</var>/d<var>φ</var></span>. The lower plot is <var>φ̂</var>(<var>q</var>), with the tangent at the operating point.</p>
+  </div>
+  <div class="ctl-grid">
+    <label class="sl"><span>Amplitude <output id="o2a">1.00 V</output></span><input id="i2a" type="range" min="0.3" max="1.6" step="0.01" value="1"></label>
+    <label class="sl"><span>Frequency <output id="o2f">1.00 Hz</output></span><input id="i2f" type="range" min="-1" max="1.3" step="0.01" value="0"></label>
+  </div>
+  <label class="tog"><input type="checkbox" id="i2lin"><span>Make the rule a straight line</span></label>
+  <p class="note"><span class="lay">With a straight-line rule the steepness never changes, and the part is just an ordinary resistor. Memory needs a <b>bendy</b> rule.</span><span class="pro">If <var>M</var> is constant, <var>φ̂</var> is linear and the element is a resistor. A memristor is distinct only when it is <b>nonlinear</b>.</span></p>
+  <p class="tip">Press and drag across the scope to drive it yourself. Hold still on one side and watch the charge build up.</p>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>Memory with the power off</summary><p>The ideal memristor’s state is the total charge that has passed through. With the power off no charge moves, so the state, and the resistance, simply stays put. That’s what “non-volatile” means.</p><p class="pro dtech">At v = 0, i = 0, so dq/dt = 0 and M(q) is frozen.</p></details>
+    <details class="deep"><summary>Why the curve must bend</summary><p>If the rule linking flux and charge were a straight line, its steepness (the resistance) would never change, and the part would just be a resistor. All the interesting behaviour comes from the bend.</p><p class="pro dtech">M = dφ̂/dq is constant if and only if φ̂ is affine.</p></details>
+    <details class="deep"><summary>The twin version</summary><p>You can also write the same idea the other way round, with the current controlled by the running total of voltage. It’s the same kind of part, seen from the other side.</p><p class="pro dtech">Flux-controlled form: q = q̂(φ), i = W(φ)·v with W = dq̂/dφ (the memductance).</p></details>
+  </div>
+</section>
+
+<!-- 4 ── fingerprints ──────────────────────────────── -->
+<section class="step" id="s4" data-title="Fingerprints">
+  <p class="kicker">04 · “If it's pinched, it's a memristor” (Chua, 2014)</p>
+  <h2>Three fingerprints</h2>
+  <p class="lay">How do you spot a memristor? Plot voltage against current while you wiggle the voltage back and forth. Memory leaves three fingerprints:</p>
+  <p class="pro">Chua's 2014 operational definition says that any two-terminal device showing a pinched v–i loop under any periodic excitation is a memristor. The fingerprints:</p>
+  <ol class="fp" id="fp">
+    <li data-fp="1"><b>Pinched at the middle</b>: zero volts always means zero current, so the loop crosses itself there.</li>
+    <li data-fp="2"><b>Loops thin out</b> as you wiggle faster, beyond some critical frequency.</li>
+    <li data-fp="3"><b>A single line</b> when the wiggle is very fast. The memory has no time to react.</li>
+  </ol>
+  <div class="ctl-grid">
+    <label class="sl"><span>Frequency <output id="o3f">1.00 Hz</output></span><input id="i3f" type="range" min="-0.8" max="1.6" step="0.01" value="0"></label>
+    <label class="sl"><span>Amplitude <output id="o3a">1.00 V</output></span><input id="i3a" type="range" min="0.4" max="1.6" step="0.01" value="1"></label>
+  </div>
+  <div class="seg" id="wseg" role="group" aria-label="Waveform"><button data-w="sine" class="on">Sine</button><button data-w="tri">Triangle</button></div>
+  <p class="warn"><b>Necessary, not sufficient.</b> <span class="lay">Lots of things with <em>any</em> kind of memory make a bow tie: a warm light bulb filament, for one. A bow tie shows that a part remembers something. It can't show that what it remembers is charge.</span><span class="pro">Pershin and Di Ventra (2019) note that many systems with additional state variables pinch too. A pinched loop proves memory, not that charge alone is the state.</span></p>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>Why faster means thinner</summary><p>Each half-wiggle pushes some charge through. Wiggle faster and each push is shorter, so less charge moves, the state barely changes, and the resistance stays almost constant. A part with constant resistance draws a straight line.</p><p class="pro dtech">For sinusoidal drive the state excursion Δq ∝ A/ω, so the loop area → 0 as ω → ∞.</p></details>
+    <details class="deep"><summary>Things that make bow ties but aren’t memristors</summary><p>An old-fashioned light bulb, a neon tube, even the ion channels in your nerves all draw pinched loops, because they all have some hidden memory (temperature, ionisation, gate states). That’s why a bow tie alone can’t prove a part is the perfect memristor.</p><p class="pro dtech">Thermistors, discharge tubes and Hodgkin–Huxley channels are memristive systems. Pinched hysteresis is necessary but not sufficient for ideality.</p></details>
+  </div>
+</section>
+
+<!-- 5 ── HP ────────────────────────────────────────── -->
+<section class="step" id="s5" data-title="HP 2008">
+  <p class="kicker">05 · Strukov, Snider, Stewart, Williams, Nature 2008</p>
+  <h2>“The missing memristor found”</h2>
+  <div class="lay">
+    <p>In 2008, HP Labs announced they had found it. Their chip was a thin oxide layer with a <b class="c-amber">conductive zone</b> (amber) that grows like a rising tide as current flows. The more of the layer it fills, the lower the resistance.</p>
+    <p>The simple maths matched Chua's equation, and the world got excited. But a tide can't rise above the top of the layer, so modellers added a “brake” near the edges, called a <b>window</b>. Some brakes had a nasty side effect. Press the button below to see it.</p>
+  </div>
+  <div class="pro">
+    <p>TiO<sub>2</sub> of thickness <var>D</var> as two series resistors: an oxygen-deficient region of width <var>w</var> and an undoped one. Linear ion drift:</p>
+    <div class="eqblock">
+      <div><var>v</var> = [<var>R</var><sub>on</sub>·<var>w</var>/<var>D</var> + <var>R</var><sub>off</sub>·(1 − <var>w</var>/<var>D</var>)] · <var>i</var></div>
+      <div>d<var>w</var>/d<var>t</var> = (<var>μ</var><sub>v</sub><var>R</var><sub>on</sub>/<var>D</var>) · <var>i</var> · <var>F</var>(<var>x</var>)</div>
+    </div>
+    <p>With <var>F</var> = 1 this integrates to <span class="eq"><var>M</var>(<var>q</var>) ≈ <var>R</var><sub>off</sub>(1 − <var>μ</var><sub>v</sub><var>R</var><sub>on</sub><var>q</var>/<var>D</var>²)</span>, which is Chua's ideal form, and the 1/<var>D</var>² scaling made it a nanoscale story. Windows keep <var>x</var> = <var>w</var>/<var>D</var> in [0, 1]: Joglekar <span class="eq">1 − (2<var>x</var>−1)<sup>2<var>p</var></sup></span>, Biolek <span class="eq">1 − (<var>x</var> − stp(−<var>i</var>))<sup>2<var>p</var></sup></span>, Prodromakis <span class="eq"><var>j</var>(1 − [(<var>x</var>−½)² + ¾]<sup><var>p</var></sup>)</span>.</p>
+  </div>
+  <div class="seg" id="winseg" role="group" aria-label="Window function">
+    <button data-win="none">No brake</button><button data-win="joglekar" class="on">Joglekar</button><button data-win="biolek">Biolek</button><button data-win="prodromakis">Prodromakis</button>
+  </div>
+  <div class="ctl-grid">
+    <label class="sl"><span>Brake sharpness p <output id="o4p">2</output></span><input id="i4p" type="range" min="1" max="10" step="1" value="2"></label>
+    <label class="sl"><span>Amplitude <output id="o4a">1.00 V</output></span><input id="i4a" type="range" min="0.3" max="1.6" step="0.01" value="1"></label>
+  </div>
+  <div class="row"><button class="btn primary" id="b4push">Push the tide to the edge</button><button class="btn ghost" id="b4reset">Reset</button></div>
+  <p class="note" id="n4"></p>
+  <details class="rec pro"><summary>Why the HP model is now considered inadequate</summary>
+    <ul>
+      <li>Ion drift is not linear at ~10<sup>8</sup> V/m. Switching kinetics are exponential in voltage.</li>
+      <li>Conduction is set by an interface or tunnel barrier and, in many devices, by a localised filament, not a uniform moving boundary (Yang 2008, Pickett 2009).</li>
+      <li>There is no threshold, so any read current disturbs the state.</li>
+      <li>Window models are often ill-posed in SPICE and harmonic balance (Wang &amp; Roychowdhury 2016).</li>
+    </ul>
+  </details>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>Why “1/D²” made headlines</summary><p>HP’s formula said the memory effect gets stronger the thinner the film: one over the thickness squared. Make the device ten times thinner and the effect is a hundred times bigger. That made it a perfect story for nanotechnology.</p><p class="pro dtech">M(q) ≈ R_off(1 − μ_v R_on q/D²).</p></details>
+    <details class="deep"><summary>What turned out to be wrong</summary><p>Real atoms don’t drift gently in proportion to the voltage. They hop over energy barriers, so switching gets exponentially faster with voltage. Most devices don’t move a smooth layer at all: they grow a thin filament. The simple model also has no threshold, so even reading the device would disturb it.</p><p class="pro dtech">Nonlinear (sinh/exp) ion kinetics at ~10⁸ V/m; interface or tunnel-barrier conduction (Yang 2008, Pickett 2009); localised filaments; no threshold.</p></details>
+    <details class="deep"><summary>The Zeno problem</summary><p>With some brakes, the tide gets halfway to the edge, then halfway again, and so on forever. On paper it never arrives, so switching would take infinite time. It’s like Zeno’s paradox of the runner who never reaches the finish line.</p><p class="pro dtech">Mutlu & Kumru (2023): several window-function models have infinite switching time. In floating point the state instead snaps to F = 0 and locks.</p></details>
+  </div>
+</section>
+
+<!-- 6 ── filament ──────────────────────────────────── -->
+<section class="step" id="s6" data-title="Filament">
+  <p class="kicker">06 · What the oxide is really doing</p>
+  <h2>Real devices grow a filament</h2>
+  <div class="lay">
+    <p>Zoom into a real memory chip and there's no smooth tide. Instead, a positive voltage tugs oxygen atoms (<b class="c-mag">red</b>) out of the glass. The holes they leave behind line up into a thin <b class="c-cyan">glowing thread</b>, like a stalagmite growing upward.</p>
+    <p>When the thread almost touches the top, electrons can jump the last tiny <b>gap</b> and the resistance drops a lot. Reverse the voltage and the thread dissolves. The thread heats itself up as it carries current, and heat makes it grow faster still.</p>
+    <p>The best part is the <b>threshold</b>. A gentle voltage, used to read the cell, barely moves the thread. A slightly stronger one rebuilds it in nanoseconds. The lower graph shows how dramatic that is.</p>
+  </div>
+  <div class="pro">
+    <p>Filamentary VCM: field- and temperature-accelerated vacancy migration grows a conductive filament. The state is the tunnelling gap <var>g</var>. Stanford/PKU compact model:</p>
+    <div class="eqblock">
+      <div><var>I</var> = <var>I</var><sub>0</sub> e<sup>−<var>g</var>/<var>g</var><sub>0</sub></sup> sinh(<var>V</var>/<var>V</var><sub>0</sub>)</div>
+      <div>d<var>g</var>/d<var>t</var> = −<var>v</var><sub>0</sub> e<sup>−<var>E</var><sub>a</sub>/<var>kT</var></sup> sinh(<var>γa</var><sub>0</sub><var>V</var> / <var>t</var><sub>ox</sub><var>kT</var>)</div>
+      <div><var>T</var> = <var>T</var><sub>0</sub> + <var>V</var>·<var>I</var>·<var>R</var><sub>th</sub></div>
+    </div>
+    <p>Thermally activated hopping over a field-lowered barrier (sinh·exp) and Joule self-heating produce extreme switching nonlinearity. SET is abrupt (positive feedback through <var>T</var>) and RESET gradual. Jülich's <b>JART VCM</b> instead uses <var>N</var><sub>disc</sub>, the vacancy concentration modulating a Schottky barrier, with D2D/C2C variability and RTN. Bengel et al. (2021) validated it on Pt/HfO<sub>2</sub>/TiO<sub>x</sub>/Pt nano-crossbars.</p>
+  </div>
+  <div class="ctl-grid">
+    <label class="sl"><span>Amplitude <output id="o5a">1.40 V</output></span><input id="i5a" type="range" min="0.6" max="1.9" step="0.01" value="1.4"></label>
+    <label class="sl"><span>Frequency <output id="o5f">1 kHz</output></span><input id="i5f" type="range" min="1" max="6.5" step="0.05" value="3"></label>
+    <label class="sl"><span>Room temperature <output id="o5t">300 K</output></span><input id="i5t" type="range" min="250" max="420" step="1" value="300"></label>
+  </div>
+  <div class="row">
+    <label class="tog"><input type="checkbox" id="i5log" checked><span>log |<var>i</var>| axis</span></label>
+    <label class="tog"><input type="checkbox" id="i5n"><span>random variation</span></label>
+  </div>
+  <p class="tip">Press and drag across the scope to set the voltage by hand. Creep up slowly and find the voltage where the thread suddenly snaps shut.</p>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>The very first switch: “forming”</summary><p>A brand-new cell has no filament. Engineers apply a one-time, higher-voltage “forming” pulse to create the first one. After that, normal voltages grow and dissolve it.</p><p class="pro dtech">Electroforming is included in later JART VCM versions and studied in 1T1R arrays.</p></details>
+    <details class="deep"><summary>Why heat is the accelerator</summary><p>Atoms jiggle more when hot, so they hop over barriers much more often. Current heats the filament, which speeds up the hopping, which changes the current. That loop is why switching ON is sudden and switching OFF is gradual.</p><p class="pro dtech">Rate ∝ exp(−E_a/kT)·sinh(γa₀V/t_ox kT), with T = T₀ + V·I·R_th: positive feedback on SET, negative on RESET.</p></details>
+    <details class="deep"><summary>Every switch is a little different</summary><p>Atoms move randomly, so the filament grows a bit differently each time and differs from cell to cell. Turn on “random variation” to see the loop wobble. Chip designers have to plan for this.</p><p class="pro dtech">Device-to-device and cycle-to-cycle variability, plus random telegraph noise. Modelled with stochastic terms (JART v1b, Stanford/PKU variants) and 2025 stochastic compact models.</p></details>
+    <details class="deep"><summary>How real chips use these cells</summary><p>Each memory cell is usually paired with a tiny transistor or “selector” that acts as a gate. It limits the current during switching and stops neighbouring cells interfering with each other.</p><p class="pro dtech">1T1R and 1S1R array architectures; the compliance current sets the ON state.</p></details>
+  </div>
+</section>
+
+<!-- 7 ── template ──────────────────────────────────── -->
+<section class="step" id="s7" data-title="Template">
+  <p class="kicker">07 · Chua &amp; Kang 1976 · the framework that won</p>
+  <h2>One recipe, many devices</h2>
+  <div class="lay">
+    <p>Here's the device pulled apart. Every real memory chip follows the same simple recipe: <b>a resistance controlled by a hidden dial</b>. Current turns the dial, and the dial sets the resistance.</p>
+    <p>What the dial physically <em>is</em> changes from chip to chip: the length of a thread, how many atoms are missing, the thickness of a layer, how crystalline a material is, its temperature, which way a magnet points. Scientists agree on the recipe. The argument is only about whether the <b>perfect</b> version, with charge as the dial, exists.</p>
+  </div>
+  <div class="pro">
+    <div class="eqblock big">
+      <div><var>v</var> = <var>R</var>(<var>x</var>, <var>i</var>) · <var>i</var></div>
+      <div>d<var>x</var>/d<var>t</var> = <var>f</var>(<var>x</var>, <var>i</var>)</div>
+    </div>
+    <p>A resistance controlled by slow internal states, with zero current at zero voltage (when <var>R</var> is finite). That minimal assumption is why the framework fits every device. It is also why critics call it a generic “nonlinear dynamic resistor”, since it covers thermistors, discharge tubes and Hodgkin–Huxley channels as well. It is a template, not a law.</p>
+  </div>
+  <div class="nest pro" id="nest">
+    <button data-k="ext"><span>Extended</span><span class="eq">v = R(x,i)·i, ẋ = g(x,i)</span></button>
+    <button data-k="gen"><span>Generic</span><span class="eq">v = R(x)·i, ẋ = g(x,i)</span></button>
+    <button data-k="ig"><span>Ideal generic</span><span class="eq">v = R(x)·i, ẋ = g(x)·i</span></button>
+    <button data-k="id" class="on"><span>Ideal</span><span class="eq">v = R(q)·i, q̇ = i</span></button>
+  </div>
+  <p class="note pro" id="nestnote"></p>
+  <table class="zoo">
+    <thead><tr><th>Technology</th><th>The hidden dial</th><th class="pro">Go-to model</th></tr></thead>
+    <tbody>
+      <tr><td>Oxide memory (VCM)</td><td>missing-oxygen count</td><td class="pro">JART VCM</td></tr>
+      <tr><td>HfO<sub>x</sub> RRAM</td><td>filament gap</td><td class="pro">Stanford/PKU</td></tr>
+      <tr><td>TiO<sub>2</sub> switch</td><td>tunnel width</td><td class="pro">Pickett/Simmons</td></tr>
+      <tr><td>Phase-change</td><td>how crystalline</td><td class="pro">JMAK + thermal</td></tr>
+      <tr><td>NbO<sub>2</sub> / VO<sub>2</sub></td><td>temperature</td><td class="pro">Gibson electrothermal</td></tr>
+      <tr><td>Spintronic</td><td>magnet direction</td><td class="pro">LLG</td></tr>
+      <tr><td>Any, fast</td><td>a fitted dial</td><td class="pro">VTEAM / Yakopcic</td></tr>
+    </tbody>
+  </table>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>The four classes in one sentence each</summary><p>Ideal: resistance set by charge alone. Ideal generic: set by a hidden dial that is secretly just charge in disguise. Generic: a hidden dial that moves in more complicated ways. Extended: the resistance also depends directly on the current.</p><p class="pro dtech">Chua (2015) classification: ideal ⊂ ideal generic ⊂ generic ⊂ extended.</p></details>
+    <details class="deep"><summary>Why critics call the recipe too broad</summary><p>A recipe that fits everything from light bulbs to nerve cells doesn’t tell you much about any one of them. The physics, meaning what the dial is and how it moves, still has to come from studying each device.</p></details>
+  </div>
+</section>
+
+<!-- 8 ── Mott ──────────────────────────────────────── -->
+<section class="step" id="s8" data-title="Spiking">
+  <p class="kicker">08 · NbO<sub>2</sub> · locally active memristors</p>
+  <h2>A device that fires like a neuron</h2>
+  <div class="lay">
+    <p>In this chip the hidden dial is simply <b>temperature</b>. Current warms it, and warm material conducts better, so more current flows and it warms further. Above about 800 °C it suddenly behaves like a metal.</p>
+    <p>Feed it through a resistor with a small capacitor alongside and it starts to <b>blink</b>. Charge builds up, the chip flashes hot, dumps the charge, cools, and goes again, much like a nerve cell firing. Turn the supply knob and find where the blinking starts and stops.</p>
+  </div>
+  <div class="pro">
+    <p>A thermal Mott memristor: state = temperature, with an Arrhenius insulator going metallic near <var>T</var><sub>c</sub> ≈ 1070 K. The quasi-static I–V is S-shaped, giving current-controlled <b>negative differential resistance</b>.</p>
+    <div class="eqblock">
+      <div><var>i</var> = <var>G</var>(<var>T</var>) · <var>v</var></div>
+      <div><var>C</var><sub>th</sub> d<var>T</var>/d<var>t</var> = <var>i</var><var>v</var> − (<var>T</var> − <var>T</var><sub>0</sub>)/<var>R</var><sub>th</sub></div>
+    </div>
+    <p>In a Pearson–Anson configuration, a load line through the NDR branch has no stable equilibrium, and the circuit relaxes into spiking. Kumar, Strachan and Williams (Nature 548, 318, 2017) found both transport-driven and Mott-driven NDR in NbO<sub>2</sub> and drove it into chaos. Chua's local-activity and edge-of-chaos theory is the analysis tool.</p>
+  </div>
+  <label class="sl"><span>Supply voltage <output id="o7v">4.0 V</output></span><input id="i7v" type="range" min="0.5" max="15" step="0.1" value="4"></label>
+  <p class="note" id="n7"></p>
+  <p class="note"><span class="lay">Exciting for brain-like chips, but it's an <em>active</em> device, with energy pumped in to make it fire. It tells us nothing about the perfect, passive memristor.</span><span class="pro">These are memristive systems, but locally active. They are irrelevant to the existence of an ideal <em>passive</em> memristor.</span></p>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>What a load line is</summary><p>The rest of the circuit (the supply and the resistor) only allows certain combinations of voltage and current, and they fall on a straight line. Where that line crosses the device’s own curve is where the circuit wants to sit. If it crosses the backwards-bending part of the curve, there’s no comfortable place to sit, and the circuit oscillates.</p><p class="pro dtech">Equilibria lie where the load line i = (V_s − v)/R_s meets the DC curve. An intersection on the NDR branch, with enough C, gives a relaxation oscillation.</p></details>
+    <details class="deep"><summary>The “edge of chaos”</summary><p>Chua’s theory says lifelike behaviour (spikes, rhythms, chaos) appears in devices poised on a knife-edge between calm and unstable. NbO₂ cells can be tuned to sit right there.</p><p class="pro dtech">Local activity theory gives a necessary condition for complexity. Kumar, Strachan & Williams (2017) used chaotic NbO₂ dynamics for optimisation.</p></details>
+  </div>
+</section>
+
+<!-- 9 ── capacitor test ────────────────────────────── -->
+<section class="step" id="s9" data-title="The test">
+  <p class="kicker">09 · Pershin &amp; Di Ventra, J. Phys. D 2018</p>
+  <h2>The capacitor test</h2>
+  <div class="lay">
+    <p>Here's a fair test of whether a part is a true memristor. Connect it to a <b>capacitor</b>, which is a little charge bucket. Every bit of charge that goes through the part ends up in the bucket. Push in a burst, then let the bucket empty back through the part.</p>
+    <p>At the end, exactly as much charge has gone back as went forward, so the books balance. A true memristor only cares about charge, so it <b>must</b> return to exactly where it started. If it doesn't, it isn't one.</p>
+  </div>
+  <div class="pro">
+    <p>Place the device in series with a capacitor. Then <span class="eq"><var>q</var><sub>M</sub>(<var>t</var>) − <var>q</var><sub>M</sub>(0) = <var>q</var><sub>C</sub>(<var>t</var>) − <var>q</var><sub>C</sub>(0)</span>. For any excitation that returns <var>q</var><sub>C</sub> to its initial value, an ideal memristor must satisfy <span class="eq"><var>M</var><sub>final</sub> = <var>M</var><sub>initial</sub></span>. Here the drive ends at 0 V and the capacitor discharges fully through the device. Pass criterion: within ±10%.</p>
+  </div>
+  <div class="seg" id="tseg" role="group" aria-label="Test waveform">
+    <button data-t="one" class="on">Single pulse</button><button data-t="two">Up, then down</button><button data-t="gentle">Gentle 0.4 V</button><button data-t="burst">Random burst</button>
+  </div>
+  <div class="row"><button class="btn primary" id="b8run">Run the test</button>
+    <div class="seg small" id="dseg" role="group" aria-label="Device on the bench"><button data-d="real" class="on">Show: real chip</button><button data-d="ideal">Show: ideal</button></div></div>
+  <div class="verdicts">
+    <div class="vd" id="vdI"><b>Ideal memristor</b><span class="vr">—</span><small></small></div>
+    <div class="vd" id="vdR"><b>Real chip</b><span class="vr">—</span><small></small></div>
+  </div>
+  <p class="note" id="n8">Try every preset. A pass proves little: the gentle pulse switches nothing, and “up, then down” undoes itself by luck. A single clear fail is enough to settle it.</p>
+  <details class="rec" open><summary>What happened in real labs</summary>
+    <ul>
+      <li><b>2020</b> <span class="lay">More than 60 tests on two kinds of memory cell. They passed only when the voltage was too low to switch anything, and <b class="c-red">failed</b> at normal voltages.</span><span class="pro">Kim, Pershin, Yin, Datta, Di Ventra (Adv. Electron. Mater. 6, 2000010). Ru/SiO<sub>2</sub>/Cu cells passed only at 0.4 V, where nothing switched, and <b class="c-red">failed at 1 V</b>. Most Knowm Ag-chalcogenide results fell outside ±10%. In a simulated TaO<sub>x</sub> model, R(q) split into a different curve for each voltage.</span></li>
+      <li><b>2022</b> <span class="lay">The magnetic “Φ memristor” <b class="c-red">failed</b> too (next station).</span><span class="pro">Pershin, Kim, Datta, Di Ventra (Physica E 142, 115290): the Φ device <b class="c-red">failed</b>, “simply an inductor with memory.”</span></li>
+      <li>No peer-reviewed device has passed. <span class="pro">Caveat: most results come from one group, and independent replications on VCM oxides, PCM and spintronic devices would strengthen the conclusion.</span></li>
+    </ul>
+  </details>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>Why one fail is enough</summary><p>The rule says “a true memristor must always come back to where it started”. To show a part breaks the rule, you only need one case where it doesn’t. Passing a few tests can’t prove it, because the next test might fail.</p></details>
+    <details class="deep"><summary>Has anyone challenged the test?</summary><p>Not in the papers reviewed here. The logic is simple and hasn’t been refuted. The honest caveat is that most published results come from one research group, so independent repeats on more kinds of devices would make the case stronger.</p></details>
+  </div>
+</section>
+
+<!-- 10 ── the hunt ─────────────────────────────────── -->
+<section class="step" id="s10" data-title="The hunt">
+  <p class="kicker">10 · Looking for the real one</p>
+  <h2>The hunt for the perfect one</h2>
+  <div class="lay">
+    <p>Some scientists think the perfect memristor needs real <b>magnetism</b>, the way an inductor does. So in 2019 a team threaded a wire through a magnetic ring and announced: “real memristor found”.</p>
+    <p>Try it yourself. Each pulse sends charge through the wire and then lets it drain back out. The charge always returns to zero, but the ring <b>stays flipped</b>. It remembers the direction of the last pulse, not the total charge, so it fails.</p>
+  </div>
+  <div class="pro">
+    <p>If <var>φ</var> must be physical magnetic flux, HP's TiO<sub>2</sub> cell “would work in a world without magnetism” (Vongehr &amp; Meng 2015). The 2019 “Φ memristor” used a wire threaded through a ferrite core. The toy model here: core magnetisation switches when the wire current exceeds a coercive value, while the series capacitor forces net charge to zero after each pulse.</p>
+  </div>
+  <div class="row"><button class="btn primary" id="b9p">Pulse +</button><button class="btn primary" id="b9n">Pulse −</button><button class="btn ghost" id="b9r">Reset</button></div>
+  <p class="note" id="n9"></p>
+  <ol class="tl">
+    <li><b>2019</b> <span class="lay">“Real memristor found” is published.</span><span class="pro">Wang, Li, Shi, Wu, Chua, “Φ memristor: Real memristor found” (J. Appl. Phys. 125, 054504).</span></li>
+    <li class="bad"><b>Jan 2021</b> <span class="tag">Retracted</span> <span class="lay">The journal withdrew it because a key equation gave wrong answers.</span><span class="pro">A key equation “provides invalid results v(t)… when applied to a continuously varying excitation.”</span></li>
+    <li class="bad"><b>2022</b> It fails the capacitor test.</li>
+    <li class="meh"><b>2022</b> <span class="lay">A magnetic film that behaves “almost ideally”. But it is driven by a magnet rather than current, and it only works at around −170 °C.</span><span class="pro">Ivanov &amp; Urazhdin, NiO(8 nm)/permalloy(10 nm)/Ta: “an almost ideal memristor”. It is field-driven rather than current-driven, measured at 90–120 K, its loop-area scaling is nonlinear, and it was given no capacitor test.</span></li>
+    <li class="meh"><b>2014</b> <span class="lay">A superconducting design that should work, on paper only.</span><span class="pro">Peotta &amp; Di Ventra: an asymmetric SQUID at half a flux quantum is an ideal memristor. Theory only.</span></li>
+    <li class="meh"><b>2022</b> <span class="lay">A “quantum memristor” made of light, which imitates one using extra electronics.</span><span class="pro">Spagnolo et al., photonic quantum memristor (Nat. Photon. 16, 318): an emulated memristive system with active feedback.</span></li>
+  </ol>
+  <details class="rec"><summary>A deeper objection: heat and noise</summary>
+    <p><span class="lay">Some physicists argue that a perfect memristor would quietly turn random heat jiggles into usable energy, which the laws of thermodynamics forbid. If they're right, the perfect part can't exist. Others disagree.</span><span class="pro">Sundqvist, Ferry &amp; Kish (2017): the noise-free equations lack a fluctuation–dissipation theorem, so a passive memristor could rectify thermal noise in violation of the Second Law. Abraham (2018) calls the ideal memristor “an unphysical active device.” Circuit theorists reply that Wyatt–Chua passivity holds whenever <var>M</var>(<var>q</var>) &gt; 0. The disagreement over the definition of passivity remains open.</span></p>
+  </details>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>Why look at magnetism?</summary><p>An inductor stores energy in a magnetic field. If the memristor really is the “missing” partner in the symmetry, some argue it should involve magnetism too. HP’s oxide cell would work just as well in a world without magnetism, which is why critics say it can’t be Chua’s original part.</p><p class="pro dtech">Vongehr & Meng (2015). Gale’s mem-con theory tried to give φ a literal magnetic meaning via Biot–Savart, but it needs fitted constants and hasn’t been adopted.</p></details>
+    <details class="deep"><summary>What would count as finding one?</summary><p>A real, two-terminal, unpowered part that returns to exactly its starting resistance whenever its charge returns to zero, for any pattern of pushes, at ordinary conditions. Nothing has done that yet.</p><p class="pro dtech">Pass the series-capacitor test for arbitrary excitations, be passive, and be driven by current rather than an external field.</p></details>
+  </div>
+</section>
+
+<!-- 11 ── verdict ──────────────────────────────────── -->
+<section class="step" id="s11" data-title="Verdict">
+  <p class="kicker">11 · Where things stand, October 2026</p>
+  <h2>Solved for engineers. Open for physics.</h2>
+  <div class="board">
+    <div class="b-ok"><h3>Settled</h3><ul>
+      <li><span class="lay">Real memory chips work like “resistance + hidden dial”, and we can simulate them very accurately.</span><span class="pro">Real devices are memristive systems: several states, thermally activated and field-accelerated kinetics, strong self-heating.</span></li>
+      <li><span class="lay">HP's simple 2008 tide model is too simple for real chips.</span><span class="pro">HP linear drift and simple window functions are inadequate.</span></li>
+      <li><span class="lay">A bow-tie loop alone doesn't prove a part is a perfect memristor.</span><span class="pro">A pinched loop alone does not prove ideality.</span></li></ul></div>
+    <div class="b-mid"><h3>Strongly supported</h3><ul>
+      <li><span class="lay">No one has built a perfect memristor.</span><span class="pro">No fabricated device has been shown to be ideal.</span></li>
+      <li><span class="lay">Every real chip tested fails the capacitor test.</span><span class="pro">Tested resistive-switching devices fail the capacitor test.</span></li></ul></div>
+    <div class="b-open"><h3>Still argued about</h3><ul>
+      <li>Whether a perfect memristor is physically possible.</li>
+      <li>Whether it deserves to be called a “fundamental” element.</li>
+      <li>Whether it needs real magnetism.</li>
+      <li class="pro">Whether the noise-free equations are thermodynamically consistent.</li></ul></div>
+  </div>
+  <p class="lay"><b>The bottom line.</b> Engineers can design with these chips today, for memory and brain-like computing. Physicists still can't point to the perfect part from the 1971 equation, and many doubt it exists. Much of the fight is about <b>names</b>. If “memristor” means anything that leaves a bow tie, they're everywhere. If it means the perfect charge-only part, none has been found.</p>
+  <p class="pro"><b>Bottom line.</b> The problem is solved in the engineering sense and unsolved in the fundamental sense. State-variable compact models simulate real devices accurately. No device is known to obey <span class="eq"><var>v</var> = <var>M</var>(<var>q</var>)·<var>i</var></span>. Chua's broad definition and the physicists' narrow one are each internally consistent. “The memristor exists” only has meaning once the definition is fixed.</p>
+  <div class="pro">
+    <p class="kicker sub">If you need a model</p>
+    <ol class="howto">
+      <li>Choose by technology (station 07), not by name.</li>
+      <li>Fit to your own <b>pulse</b> responses, not only DC sweeps.</li>
+      <li>Include temperature and variability.</li>
+      <li>Check that the model is well-posed (Wang &amp; Roychowdhury 2016).</li>
+      <li>To settle a claim of ideality, run the series-capacitor test.</li>
+    </ol>
+  </div>
+  <details class="rec"><summary>Timeline, 1971–2026</summary>
+    <ol class="tl compact">
+      <li><b>1971</b> Chua proposes the memristor.</li>
+      <li><b>1976</b> Chua &amp; Kang: memristive systems.</li>
+      <li><b>2008</b> HP: “The missing memristor found”.</li>
+      <li><b>2009</b> Window functions, the Pickett tunnel model, and memcapacitors and meminductors.</li>
+      <li><b>2013–15</b> TEAM, Yakopcic, Stanford/PKU, VTEAM. “If it's pinched it's a memristor”.</li>
+      <li><b>2015</b> “The missing memristor has not been found”.</li>
+      <li><b>2017</b> NbO<sub>2</sub> chaos. Thermodynamic objections.</li>
+      <li><b>2018</b> The case for rejecting it as fundamental. The capacitor test is proposed.</li>
+      <li class="bad"><b>2019→21</b> Φ memristor claimed, then retracted.</li>
+      <li><b>2020–22</b> Switching cells and the Φ device fail the test.</li>
+      <li><b>2024–26</b> Neural-network compact models, stochastic and edge-of-chaos models.</li>
+    </ol>
+  </details>
+  <details class="rec"><summary>Key sources</summary>
+    <ul class="src">
+      <li>Chua &amp; Kang (1976) context: <a href="https://arxiv.org/pdf/1905.02254">arXiv:1905.02254</a></li>
+      <li>Chua, “If it's pinched it's a memristor” (2014): <a href="https://iopscience.iop.org/article/10.1088/0268-1242/29/10/104001">Semicond. Sci. Technol.</a></li>
+      <li>Vongehr &amp; Meng (2015): <a href="https://www.nature.com/articles/srep11657">Sci. Rep.</a></li>
+      <li>Kumar, Strachan, Williams, NbO<sub>2</sub> chaos (2017): <a href="https://www.nature.com/articles/nature23307">Nature</a></li>
+      <li>Abraham (2018): <a href="https://arxiv.org/pdf/1812.03389">arXiv:1812.03389</a></li>
+      <li>The memristor test: <a href="https://arxiv.org/pdf/2102.11963">arXiv:2102.11963</a></li>
+      <li>Φ memristor retraction (2021): <a href="https://pubs.aip.org/aip/jap/article/129/2/029901/158291/Retraction-memristor-Real-memristor-found-J-Appl">J. Appl. Phys.</a></li>
+      <li>Ivanov &amp; Urazhdin: <a href="https://arxiv.org/pdf/2102.00123">arXiv:2102.00123</a></li>
+      <li>Sundqvist, Ferry, Kish (2017): <a href="https://arxiv.org/pdf/1703.09064">arXiv:1703.09064</a></li>
+      <li>TEAM / VTEAM / V-VTEAM: <a href="https://asic2.group/tools/memristor-models/">asic2.group</a></li>
+      <li>Well-posed models: <a href="https://arxiv.org/pdf/1605.04897">arXiv:1605.04897</a></li>
+    </ul>
+  </details>
+  <p class="fine">Built from the research brief “The Memristor Equation: What Has Been Tried, What Works, and Whether the Problem Is Solved” (Oct 2026). Simulations use published functional forms with illustrative parameters, so they show behaviour, not any particular device's numbers. The 3D bench is ray-marched in a single shader. There are no images, fonts or libraries.</p>
+  <button class="btn" data-go="0">↺ Back to the start</button>
+  <div class="deeper"><p class="kicker sub">Go deeper</p>
+    <details class="deep"><summary>If you’re an engineer</summary><p>Pick a model made for your technology, fit it to your own pulse measurements, include heat and randomness, and make sure it behaves well in your simulator. The word “memristor” doesn’t change any of that.</p><p class="pro dtech">JART VCM for valence-change oxides, Stanford/PKU for HfOₓ, electrothermal models for Mott devices, VTEAM/Yakopcic for fast behavioural work. Check well-posedness.</p></details>
+    <details class="deep"><summary>If you’re a physicist</summary><p>The open questions are whether a charge-only memristor can exist at all, whether it would have to be magnetic, and whether it can be made consistent with thermodynamics.</p><p class="pro dtech">Physical realisability, the definition of passivity, fluctuation–dissipation consistency, and whether φ must be magnetic flux.</p></details>
+    <details class="deep"><summary>If you’re just curious</summary><p>The chips are real and useful. Whether they are the mythical “fourth element” is a debate about definitions, and you now know enough to follow both sides.</p></details>
+  </div>
+</section>
+
+</main>
+
+<aside class="inst" id="inst" aria-label="Instruments">
+  <div class="inst-head"><span class="led" id="led"></span><span id="scopeTitle">Scope · v–i</span><span class="spacer"></span><span class="mono dim" id="scopeInfo"></span></div>
+  <canvas id="scope" class="scope"></canvas>
+  <div class="ro" id="ro"></div>
+  <div class="inst-head sub"><span id="p2Title">—</span><span class="spacer"></span><span class="mono dim" id="p2Info"></span></div>
+  <canvas id="plot2" class="plot2"></canvas>
+  <p class="cap" id="p2Cap"></p>
+</aside>
+
+<div class="gloss" id="gloss" hidden role="dialog" aria-modal="true" aria-labelledby="glossH">
+  <div class="gpanel">
+    <div class="ghead"><h3 id="glossH">Glossary</h3><span class="dim">every term, in plain English</span><button class="gx-btn" id="glossX" aria-label="Close">✕</button></div>
+    <input id="glossQ" type="search" placeholder="Search: LED, filament, charge…" aria-label="Search the glossary">
+    <div class="glist" id="glossList"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="mpanel"><div class="mhead"><h3 id="mTitle"></h3><button class="gx-btn" id="mClose" aria-label="Close">✕</button></div><div class="mbody" id="mBody"></div></div>
+</div>
+
+<div class="menu" id="menu" hidden>
+  <nav class="mdrawer" aria-label="Main menu">
+    <div class="mhead"><h3>Memristor Lab</h3><button class="gx-btn" id="menuX" aria-label="Close menu">✕</button></div>
+    <p class="mlabel">Stations</p>
+    <ol class="mlist" id="mStations"></ol>
+    <p class="mlabel">Explore</p>
+    <ul class="mlist">
+      <li><button data-menu="parts"><span class="mt"><b>Parts guide</b><small>Every component, its symbol, and how to read it</small></span></button></li>
+      <li><button data-menu="anatomy"><span class="mt"><b>How a breadboard works</b><small>The metal strips hidden under the holes</small></span></button></li>
+      <li><button data-menu="glossary"><span class="mt"><b>Glossary</b><small>Every term in plain English</small></span></button></li>
+      <li><button data-menu="sources"><span class="mt"><b>Sources</b><small>The papers behind each claim</small></span></button></li>
+    </ul>
+    <p class="mlabel">Deep dives</p>
+    <ul class="mlist" id="mDeep"></ul>
+    <p class="mlabel">Settings</p>
+    <div class="mset">
+      <div class="mrow"><span>Explanations</span><div class="seg small" id="setMode"><button data-m="simple">Simple</button><button data-m="tech">Technical</button></div></div>
+      <div class="mrow"><span>Graphics</span><div class="seg small" id="setQ"><button data-q="auto">Auto</button><button data-q="high">High</button><button data-q="low">Battery saver</button></div></div>
+      <label class="tog"><input type="checkbox" id="setLabels" checked><span>Labels on the 3D bench</span></label>
+      <label class="tog"><input type="checkbox" id="setMotion" checked><span>Gentle idle camera motion</span></label>
+    </div>
+    <p class="mlabel">How to use</p>
+    <ul class="mhelp">
+      <li><b>Rotate:</b> drag with one finger or the mouse.</li>
+      <li><b>Zoom:</b> pinch, scroll, or the + / − buttons.</li>
+      <li><b>Move around:</b> drag with two fingers, or right-drag / shift-drag.</li>
+      <li><b>Reset:</b> double-tap the bench or press ⟲.</li>
+      <li><b>Learn a word:</b> tap any <span class="term-demo">dotted word</span> or any part in 3D.</li>
+      <li><b>Step:</b> the Next / ← buttons, or the arrow keys.</li>
+    </ul>
+  </nav>
+</div>
+
+<footer class="navbar">
+  <button class="nb" id="prev" aria-label="Previous station">←</button>
+  <span class="nb-t" id="stepName"></span>
+  <button class="nb next" id="next" aria-label="Next station">Next →</button>
+</footer>
+
+<noscript><style>.inst,.navbar,#stage{display:none}.lay,.pro{display:block!important}</style></noscript>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

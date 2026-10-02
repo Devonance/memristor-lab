@@ -1,0 +1,8 @@
+{
+  "name": "memristor-lab-stage",
+  "private": true,
+  "type": "module",
+  "description": "Source for the 3D bench in docs/js/stage.js",
+  "scripts": { "build": "node build.mjs" },
+  "devDependencies": { "esbuild": "0.28.2", "three": "0.180.0" }
+}
