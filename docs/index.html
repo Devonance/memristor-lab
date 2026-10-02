@@ -64,7 +64,7 @@
     <div><b>Disputed</b><span class="lay">Whether that perfect part can exist at all.</span><span class="pro">Physical possibility, passivity and thermodynamic consistency, and “fundamental” status.</span></div>
   </div>
   <p class="note lay">Use the <b>Simple / Technical</b> switch at the top at any time. Technical mode shows the equations, models and papers. Any <span class="term-demo">dotted word</span> has a plain-English definition: hover or tap it. You can also tap any part on the bench, or open the <b>Glossary</b>.</p>
-  <button class="btn primary" data-go="1">Start: wire one up <span aria-hidden="true">→</span></button>
+  <div class="row"><button class="btn primary" data-go="1">Start: wire one up <span aria-hidden="true">→</span></button> <button class="btn ghost" data-tour>▶ Watch the 30-second tour</button></div>
   <div class="deeper"><p class="kicker sub">Go deeper</p>
     <details class="deep"><summary>What is a “circuit element”, anyway?</summary><p>The simplest building blocks of electronics, each defined by one rule linking two electrical quantities. A resistor links voltage and current, a capacitor links charge and voltage, and an inductor links flux and current. Chua asked whether a fourth rule, linking charge and flux, deserved its own part.</p><p class="pro dtech">A two-terminal element is defined by a constitutive relation between a pair of v, i, q, φ. R: f(v, i) = 0. C: f(q, v) = 0. L: f(φ, i) = 0. Memristor: f(q, φ) = 0.</p></details>
     <details class="deep"><summary>Why would anyone want a resistor that remembers?</summary><p>Three reasons. Memory chips that keep data with the power off and switch in nanoseconds. Brain-like chips, where a memristor plays the part of a synapse whose strength changes as it learns. And computing inside memory, which saves the energy normally spent shuttling data around. See “Computing inside memory” in the menu.</p><p><button class="btn ghost" data-art="realworld">Where memristors already ship →</button> <button class="btn ghost" data-art="electricity">Electricity in five minutes →</button></p><p class="pro dtech">Non-volatile RRAM, analog in-memory matrix–vector multiplication in crossbars (Ohm + Kirchhoff), and neuromorphic synapses. Accuracy is limited by update nonlinearity, cycle-to-cycle noise, drift and endurance.</p></details>
@@ -133,22 +133,22 @@
     <p>The four circuit variables <var>v</var>, <var>i</var>, <var>q</var>, <var>φ</var> give six pairwise relations. Two are definitions (<var>i</var> = d<var>q</var>/d<var>t</var>, <var>v</var> = d<var>φ</var>/d<var>t</var>). Three are the constitutive relations of R, C and L. Chua postulated the sixth, <span class="eq">f(<var>q</var>, <var>φ</var>) = 0</span>. Note that <var>φ</var> is flux <em>linkage</em>, <span class="eq">∫<var>v</var> d<var>t</var></span>, and not necessarily a magnetic field. That ambiguity drives much of the later debate.</p>
   </div>
   <figure class="quad" id="quad">
-    <svg viewBox="0 0 320 260" role="img" aria-label="Diagram linking v, i, q and phi">
+    <svg viewBox="0 0 360 300" role="img" aria-label="Diagram linking v, i, q and phi">
       <g class="q-edges">
-        <line class="q-def" x1="70" y1="50" x2="70" y2="210"/>
-        <line class="q-def" x1="250" y1="50" x2="250" y2="210"/>
-        <g class="q-el" data-el="R"><line x1="94" y1="38" x2="226" y2="38"/><text x="160" y="28">R · dv = R di</text></g>
-        <g class="q-el" data-el="C"><line x1="82" y1="68" x2="238" y2="192"/><text transform="translate(118 92) rotate(38.5)" y="-6">C · dq = C dv</text></g>
-        <g class="q-el" data-el="L"><line x1="238" y1="68" x2="82" y2="192"/><text transform="translate(202 92) rotate(-38.5)" y="-6">L · dφ = L di</text></g>
-        <g class="q-el q-m" data-el="M"><line x1="94" y1="222" x2="226" y2="222"/><text x="160" y="248">M · dφ = M dq  ?</text></g>
+        <line class="q-def" x1="50" y1="66" x2="50" y2="234"/>
+        <line class="q-def" x1="310" y1="66" x2="310" y2="234"/>
+        <g class="q-el" data-el="R"><line x1="76" y1="40" x2="284" y2="40"/><text x="180" y="29">R · dv = R di</text></g>
+        <g class="q-el" data-el="C"><line x1="73" y1="59" x2="287" y2="241"/><text transform="translate(118 97) rotate(40.4)" y="-7">C · dq = C dv</text></g>
+        <g class="q-el" data-el="L"><line x1="287" y1="59" x2="73" y2="241"/><text transform="translate(242 97) rotate(-40.4)" y="-7">L · dφ = L di</text></g>
+        <g class="q-el q-m" data-el="M"><line x1="76" y1="260" x2="284" y2="260"/><text x="180" y="290">M · dφ = M dq  ?</text></g>
       </g>
-      <text class="q-dl" x="56" y="134" text-anchor="end">dφ = v dt</text>
-      <text class="q-dl" x="264" y="134" text-anchor="start">dq = i dt</text>
+      <text class="q-dl" transform="translate(37 150) rotate(-90)" text-anchor="middle">dφ = v dt</text>
+      <text class="q-dl" transform="translate(323 150) rotate(90)" text-anchor="middle">dq = i dt</text>
       <g class="q-nodes">
-        <circle cx="70" cy="38" r="22"/><text x="70" y="45">v</text>
-        <circle cx="250" cy="38" r="22"/><text x="250" y="45">i</text>
-        <circle cx="70" cy="222" r="22"/><text x="70" y="229">φ</text>
-        <circle cx="250" cy="222" r="22"/><text x="250" y="229">q</text>
+        <circle cx="50" cy="40" r="22"/><text x="50" y="47">v</text>
+        <circle cx="310" cy="40" r="22"/><text x="310" y="47">i</text>
+        <circle cx="50" cy="260" r="22"/><text x="50" y="267">φ</text>
+        <circle cx="310" cy="260" r="22"/><text x="310" y="267">q</text>
       </g>
     </svg>
     <figcaption>Tap a link. The scope drives that part with the same wave.</figcaption>

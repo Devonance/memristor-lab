@@ -67,32 +67,49 @@ function heads(scopeTitle, p2Title, cap = '') {
 const info = (t, color) => { const el = $('#scopeInfo'); el.textContent = t; el.style.color = color || ''; };
 
 /* ── labels pinned to the 3D scene ────────────────────── */
+// Each label sits as a dot on its part. Tapping a dot opens its text; tapping anywhere else closes it.
+// For a hot label the first tap opens it and later taps act (the 3D parts themselves stay live).
 const labelsEl = $('#labels');
-let labelEls = [];
+let labelEls = [], openLbl = null;
+const openLabel = (d) => { if (openLbl && openLbl !== d) openLbl.classList.remove('open'); d.classList.add('open'); openLbl = d; };
+const closeLabel = () => { if (openLbl) openLbl.classList.remove('open'); openLbl = null; };
+const isOpen = (d) => d.classList.contains('open') || d.matches(':focus-visible');
+addEventListener('pointerdown', (e) => { if (openLbl && !openLbl.contains(e.target)) closeLabel(); }, true);
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLabel(); });
 function setLabels(list = []) {
-  labelsEl.innerHTML = '';
+  labelsEl.innerHTML = ''; openLbl = null;
   labelEls = list.map((L) => {
-    const d = document.createElement(L.hot ? 'button' : 'div');
+    const d = document.createElement('button');
+    d.type = 'button'; d.setAttribute('aria-label', L.aria || (L.s ? `${L.t}: ${L.s}` : L.t));
     d.className = 'lbl' + (L.side === 'l' ? ' l' : '') + (L.hot ? ' hot' : '');
-    d.style.color = L.c || COL.cyan;
+    d.style.color = L.c || COL.cyan; d.style.setProperty('--lc', L.c || COL.cyan);
     d.innerHTML = `<i></i><span>${L.t}${L.s ? `<em>${L.s}</em>` : ''}</span>`;
     d.style.opacity = 0;
-    if (L.hot) {
-      d.type = 'button'; d.setAttribute('aria-label', L.aria || L.t);
-      if (L.down) {
-        d.addEventListener('pointerdown', (e) => { e.preventDefault(); d.setPointerCapture(e.pointerId); d.classList.add('down'); L.down(); });
-        const up = () => { d.classList.remove('down'); L.up && L.up(); };
-        d.addEventListener('pointerup', up); d.addEventListener('pointercancel', up);
-        d.addEventListener('keydown', (e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); L.down(); } });
-        d.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') up(); });
-      }
-      if (L.click) d.addEventListener('click', L.click);
+    if (L.down) {
+      let pressed = false;
+      d.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (!isOpen(d)) { openLabel(d); return; }
+        d.setPointerCapture(e.pointerId); d.classList.add('down'); pressed = true; L.down();
+      });
+      const up = () => { d.classList.remove('down'); if (pressed && L.up) L.up(); pressed = false; };
+      d.addEventListener('pointerup', up); d.addEventListener('pointercancel', up);
+      d.addEventListener('keydown', (e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); pressed = true; L.down(); } });
+      d.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') up(); });
+    } else {
+      d.addEventListener('click', () => {
+        if (!isOpen(d)) openLabel(d);
+        else if (L.click) L.click();
+        else closeLabel();
+      });
     }
     labelsEl.appendChild(d);
-    return { el: d, L, w: 0 };
+    return { el: d, L, w: 0, full: 0 };
   });
-  requestAnimationFrame(() => labelEls.forEach((o) => (o.w = o.el.offsetWidth)));
+  requestAnimationFrame(() => labelEls.forEach(measure));
 }
+// w = the dot (what is pinned to the part); full = dot plus its opened text (used to pick a side that fits)
+function measure(o) { o.w = o.el.offsetWidth; o.full = o.w + 7 + o.el.querySelector('span').offsetWidth; }
 function placeLabels() {
   if (!labelEls.length) return;
   const r = stage.cv.getBoundingClientRect();
@@ -104,19 +121,22 @@ function placeLabels() {
     const x = r.left + p.x, y = r.top + p.y;
     const at = (side) => (side === 'l' ? x - o.w + 3.5 : x - 3.5);
     let side = o.L.side === 'l' ? 'l' : 'r', left = at(side);
-    const bad = (l) => under(x, y, l, o.w) || l < 4 || l + o.w > innerWidth - 4;
-    if (bad(left)) { const alt = side === 'l' ? 'r' : 'l'; if (!bad(at(alt))) { side = alt; left = at(alt); } }
-    // keep labels from sitting on top of each other
+    // the text opens to one side of the dot: pick the side where it fits on screen and clear of the panels
+    const ext = (s, l) => (s === 'l' ? l + o.w - o.full : l);
+    const bad = (s, l) => under(x, y, ext(s, l), o.full) || ext(s, l) < 4 || ext(s, l) + o.full > innerWidth - 4;
+    if (bad(side, left)) { const alt = side === 'l' ? 'r' : 'l'; if (!bad(alt, at(alt))) { side = alt; left = at(alt); } }
+    // keep dots from sitting on top of each other
     let yy = y;
-    for (let k = 0; k < 4; k++) { const hit = placed.find((q) => left < q.r && left + o.w > q.l && Math.abs(yy - q.y) < 24); if (!hit) break; yy = hit.y + (yy >= hit.y ? 25 : -25); }
+    for (let k = 0; k < 4; k++) { const hit = placed.find((q) => left < q.r + 4 && left + o.w > q.l - 4 && Math.abs(yy - q.y) < 14); if (!hit) break; yy = hit.y + (yy >= hit.y ? 15 : -15); }
     placed.push({ l: left, r: left + o.w, y: yy });
     if (o.side !== side) { o.el.classList.toggle('l', side === 'l'); o.side = side; }
     const right = left + o.w;
     const hidden = under(x, y, left, o.w) || under(x, y, x - 2, 4);
     const vis = stage.ok && p.z > 0 && yy > r.top + 40 && yy < (mobile ? sheetY - 8 : r.bottom - 6) && left > 0 && right < innerWidth && !hidden;
     o.el.style.opacity = vis ? (o.L.o ?? 1) : 0;
-    o.el.style.pointerEvents = vis && o.L.hot ? 'auto' : 'none';
-    if (o.L.text) { const t = o.L.text(); if (t !== o.last) { o.el.querySelector('span').innerHTML = t; o.last = t; o.w = o.el.offsetWidth; } }
+    o.el.style.pointerEvents = vis ? 'auto' : 'none';
+    if (!vis && o.el === openLbl) closeLabel();
+    if (o.L.text) { const t = o.L.text(); if (t !== o.last) { o.el.querySelector('span').innerHTML = t; o.last = t; measure(o); } }
     o.el.style.transform = `translate(${left}px,${yy - 7}px)`;
   }
 }
@@ -926,7 +946,7 @@ const ANAT = [
 ];
 let anatOn = false;
 ui = initUI({
-  stage, go, sections, seen, linkify: autoLink, reveal, toggleImmersive,
+  stage, sound, go, sections, seen, linkify: autoLink, reveal, toggleImmersive,
   getCur: () => cur,
   openGloss: () => openGloss(),
   anatomyLabels: (on) => { anatOn = on && cur === 1; setLabels(anatOn ? [...ch.labels, ...ANAT] : ch.labels); const t = $('#bbXrayT'); if (t) t.checked = on; $('#xcall').classList.toggle('on', on); sound.sfx(on ? 'xray' : 'release'); },
@@ -955,6 +975,8 @@ window.__lab = {
   sheet: (st) => snapSheet(st), parts: (k) => ui.openParts(k), close: () => ui.closeAll(),
   scrollStory: (y) => { $('#story').scrollTop = y; },
   finishTest: () => chapters[9].finishNow(),
+  drawers: (L, R) => { drawers.L = L; drawers.R = R; applyDrawers(); },
+  verdicts: () => [...document.querySelectorAll('.vd')].map((v) => v.className + '|' + v.textContent.replace(/\s+/g, ' ')),
 };
 
 /* ── frame loop ───────────────────────────────────────── */

@@ -244,6 +244,16 @@ export function initUI(ctx) {
     else if (t === 'parts') openParts();
   });
 
+  // the 30-second tour video: only fetched when someone asks for it
+  function openTour() {
+    openModal('30-second tour', `<video class="tourvid" src="media/tour.mp4" poster="media/tour.jpg" controls playsinline autoplay preload="none"></video>
+      <p class="note">A quick look at the lab on a laptop and a phone. Close this to try the real thing.</p>`, (root) => {
+      const v = root.querySelector('video'); ctx.sound && ctx.sound.duck && ctx.sound.duck(true);
+      onClose = () => { v.pause(); ctx.sound && ctx.sound.duck && ctx.sound.duck(false); };
+    }, true);
+  }
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-tour]')) openTour(); });
+
   // any [data-art] link outside the menu opens that deep dive
   document.addEventListener('click', (e) => { const a = e.target.closest('[data-art]'); if (a && !a.closest('#menu')) openArticle(a.dataset.art); });
 

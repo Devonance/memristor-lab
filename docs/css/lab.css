@@ -23,13 +23,22 @@ b{font-weight:650}
   background:radial-gradient(60% 60% at 50% 45%,#121a28 0,#07090d 70%)}
 #stage:active{cursor:grabbing}
 #labels{position:fixed;inset:0;pointer-events:none;z-index:2}
-.lbl{position:absolute;left:0;top:0;display:flex;align-items:center;gap:7px;white-space:nowrap;
+/* each label is a dot on its part; its text opens beside the dot when tapped (.open) */
+.lbl{position:absolute;left:0;top:0;display:flex;align-items:center;white-space:nowrap;
+  border:0;background:none;padding:0;
   font:600 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:#dfe8f5;
   transition:opacity .35s;will-change:transform}
-.lbl i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px rgba(255,255,255,.08),0 0 12px currentColor;flex:none}
-.lbl span{padding:5px 8px;border-radius:7px;background:rgba(8,11,17,.72);border:1px solid var(--line2);color:#dfe8f5;backdrop-filter:blur(6px)}
+.lbl i{position:relative;width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px rgba(255,255,255,.08),0 0 12px currentColor;flex:none;transition:transform .15s}
+button.lbl{cursor:pointer}
+.lbl i::after{content:"";position:absolute;inset:-11px;border-radius:50%}
+.lbl:hover i{transform:scale(1.35)}
+.lbl span{position:absolute;top:50%;left:calc(100% + 7px);padding:5px 8px;border-radius:7px;background:rgba(8,11,17,.72);border:1px solid var(--line2);color:#dfe8f5;backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transform:translateY(-50%) scale(.7);transform-origin:left center;transition:opacity .18s,transform .18s}
+.lbl.l span{left:auto;right:calc(100% + 7px);transform-origin:right center}
+.lbl.open,.lbl:focus-visible{z-index:3}
+.lbl.open span,.lbl:focus-visible span{opacity:1;pointer-events:auto;transform:translateY(-50%) scale(1)}
 .lbl em{font-style:normal;color:var(--mute);font-weight:500;margin-left:6px;text-transform:none;letter-spacing:0}
-.lbl.l{flex-direction:row-reverse}
+.lbl:focus-visible{outline:none}
 
 /* ── chrome ───────────────────────────────────── */
 .topbar{position:fixed;top:0;left:0;right:0;height:var(--top);display:flex;align-items:center;gap:18px;padding:0 22px;z-index:5;pointer-events:none}
@@ -301,12 +310,12 @@ html[data-mode=tech] .mode button.on{background:var(--violet);color:#0d0820}
 .quest li.ok::before{content:"✓";background:var(--green);border-color:var(--green);color:#04140c;box-shadow:0 0 12px rgba(94,240,168,.5)}
 
 /* hotspots pinned in 3D */
-.lbl.hot{pointer-events:auto;cursor:pointer;border:0;background:none;padding:0;font:inherit;font:600 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;user-select:none;-webkit-user-select:none;touch-action:none}
+.lbl.hot{user-select:none;-webkit-user-select:none;touch-action:none}
 .lbl.hot i{width:14px;height:14px;box-shadow:0 0 0 4px rgba(255,255,255,.12),0 0 18px currentColor;animation:ping 1.8s infinite}
-.lbl.hot span{border-color:currentColor;background:rgba(8,11,17,.82)}
-.lbl.hot:hover span,.lbl.hot.down span{background:currentColor;color:#05080c}
-.lbl.hot:hover span em,.lbl.hot.down span em{color:#05080c}
-.lbl.hot:focus-visible{outline:none}
+.lbl.hot i::after{inset:-8px}
+.lbl.hot span{border-color:var(--lc);background:rgba(8,11,17,.82)}
+.lbl.hot.open:hover span,.lbl.hot.down span{background:var(--lc);border-color:var(--lc);color:#05080c}
+.lbl.hot.open:hover span em,.lbl.hot.down span em{color:rgba(5,8,12,.7)}
 .lbl.hot:focus-visible span{outline:2px solid #fff;outline-offset:2px}
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,255,255,.35),0 0 18px currentColor}100%{box-shadow:0 0 0 12px rgba(255,255,255,0),0 0 18px currentColor}}
 @media (max-width:900px){
@@ -358,7 +367,7 @@ html[data-mode=tech] #tip em{display:block}
 .tools button:hover{background:rgba(255,255,255,.1);color:#fff}
 .tools button.on{color:var(--cyan);border-color:rgba(90,216,255,.45)}
 
-body.nolabels #labels .lbl:not(.hot){opacity:0!important}
+body.nolabels #labels .lbl:not(.hot){opacity:0!important;pointer-events:none!important}
 body.immersive .story, body.immersive .inst{opacity:0;pointer-events:none;transform:translateY(12px)}
 .story,.inst{transition:opacity .3s, transform .3s}
 body.immersive .tools{left:18px}
@@ -382,6 +391,7 @@ details.deep p.dtech{font:500 12px/1.5 var(--mono);color:#c7b8ff}
 .modal{display:grid;place-items:center}
 .mpanel{width:min(720px,94vw);max-height:88vh;display:flex;flex-direction:column;border-radius:18px;background:linear-gradient(180deg,#121823,#0b0f16);border:1px solid var(--line2);box-shadow:0 40px 120px rgba(0,0,0,.6);overflow:hidden;transform:translateY(10px);transition:transform .25s}
 .modal.wide .mpanel{width:min(920px,95vw)}
+.tourvid{display:block;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px}
 .modal.on .mpanel{transform:none}
 .mhead{display:flex;align-items:center;gap:12px;padding:16px 18px 10px;flex:none}
 .mhead h3{font:800 21px var(--sans);letter-spacing:-.01em;text-transform:none;color:#fff;margin:0}

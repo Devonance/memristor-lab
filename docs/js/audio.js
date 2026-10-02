@@ -41,13 +41,17 @@ export class Sound {
     // a real track if one has been added, otherwise the generative loop
     let usedFile = false;
     try {
-      // audio/tracks.json names the music file once one has been added: { "theme": "lab-theme.mp3" }
+      // audio/tracks.json names the music file once one has been added:
+      // { "theme": "lab-theme.mp3", "themeLoop": [start, end] } (loop points in seconds)
       const list = await (await fetch('audio/tracks.json', { cache: 'no-cache' })).json();
       if (list.theme) {
         this.trackURL = 'audio/' + list.theme;
-        const el = (this.el = new Audio(this.trackURL)); el.loop = true; el.crossOrigin = 'anonymous';
-        const src = ctx.createMediaElementSource(el); const g = ctx.createGain(); g.gain.value = 0.5;
-        src.connect(g); g.connect(this.musicBus); await el.play(); usedFile = true;
+        // decoded and looped sample-accurately: <audio loop> leaves a gap at MP3 padding
+        const buf = await ctx.decodeAudioData(await (await fetch(this.trackURL)).arrayBuffer());
+        const src = (this.src = ctx.createBufferSource()); src.buffer = buf; src.loop = true;
+        if (list.themeLoop) [src.loopStart, src.loopEnd] = list.themeLoop;
+        const g = ctx.createGain(); g.gain.value = 0.5;
+        src.connect(g); g.connect(this.musicBus); src.start(); usedFile = true;
       }
     } catch (e) { /* no file: generate instead */ }
     if (!usedFile) this.generative();
